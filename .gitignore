@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# Environment
+.env
+server/.env
+
+# Build / generated files
+dist/
+build/
+.electron-dist/
+
+# Logs
+*.log
+
+# Server keys
+server/keys/*
+!server/keys/public.pem
+
+# OS
+.DS_Store

@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: pos-billing-server
+    runtime: node
+    rootDir: server
+    plan: free
+    autoDeploy: true
+    buildCommand: npm install && cd ../client && npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: BCRYPT_ROUNDS
+        value: "10"
+      - key: LICENSE_KEYS_DIR
+        value: keys
+      - key: CLIENT_ORIGIN
+        sync: false
+      - key: DEFAULT_LICENSE_ID
+        sync: false
