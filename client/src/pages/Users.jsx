@@ -250,7 +250,7 @@ export default function Users() {
               </div>
             )}
             {!showPerms && (
-              <div className="muted small">{form.role === 'superadmin' ? 'Full access to everything' : `${form.permissions.length} permissions selected`}</div>
+              <div className="muted small">{form.role === 'superadmin' ? 'Full access to everything' : `${(form.permissions || []).length} permissions selected`}</div>
             )}
           </div>
         )}

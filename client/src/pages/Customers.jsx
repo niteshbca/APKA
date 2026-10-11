@@ -206,8 +206,8 @@ export default function Customers() {
                 <tr key={s._id}>
                   <td>{s.invoiceNo}</td>
                   <td>{fmtDateTime(s.createdAt)}</td>
-                  <td>{s.items.length}</td>
-                  <td>{s.paymentMode.toUpperCase()}</td>
+                  <td>{s.items?.length || 0}</td>
+                  <td>{(s.paymentMode || '').toUpperCase()}</td>
                   <td style={{ textAlign: 'right', fontWeight: 700 }}>{money(s.total)}</td>
                 </tr>
               ))}

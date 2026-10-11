@@ -108,7 +108,7 @@ export default function LicenseAdmin() {
                     <td>
                       <Badge tone={l.status === 'active' ? 'success' : l.status === 'suspended' ? 'warning' : 'danger'}>{l.status}</Badge>
                     </td>
-                    <td>{l.devices.length} / {l.maxDevices}</td>
+                    <td>{l.devices?.length || 0} / {l.maxDevices}</td>
                     <td className="muted small">{l.lastValidatedAt ? fmtDateTime(l.lastValidatedAt) : '—'}</td>
                     <td>
                       <div className="flex gap-8" style={{ flexWrap: 'wrap' }}>
@@ -122,7 +122,7 @@ export default function LicenseAdmin() {
                       </div>
                     </td>
                   </tr>
-                  {l.devices.length > 0 && (
+                  {l.devices?.length > 0 && (
                     <tr>
                       <td colSpan={9} style={{ background: '#f8fafc' }}>
                         <div className="small">
