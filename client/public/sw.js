@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pos-app-shell-v2';
+const CACHE_NAME = 'pos-app-shell-v3';
 const APP_SHELL = ['/', '/index.html'];
 
 self.addEventListener('install', (event) => {
@@ -16,6 +16,8 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+// Network-first so an online client always receives the latest app bundle;
+// fall back to the cache only when offline.
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
@@ -23,31 +25,22 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin) return;
   if (url.pathname.startsWith('/api/')) return;
 
-  if (req.mode === 'navigate') {
-    event.respondWith(
-      fetch(req)
-        .then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put('/index.html', copy));
-          return res;
-        })
-        .catch(() => caches.match('/index.html'))
-    );
-    return;
-  }
-
   event.respondWith(
-    caches.match(req).then((cached) => {
-      const network = fetch(req)
-        .then((res) => {
-          if (res && res.status === 200 && res.type === 'basic') {
-            const copy = res.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
-          }
-          return res;
+    fetch(req)
+      .then((res) => {
+        if (res && res.status === 200 && res.type === 'basic') {
+          const copy = res.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
+        }
+        return res;
+      })
+      .catch(() =>
+        caches.match(req).then((cached) => {
+          if (cached) return cached;
+          if (req.mode === 'navigate') return caches.match('/index.html');
+          return Response.error();
         })
-        .catch(() => cached);
-      return cached || network;
-    })
+      )
   );
 });
+

@@ -11,6 +11,29 @@ function generateLicenseId() {
 }
 
 /**
+ * Normalizes a user-entered license id so lookups are tolerant of case,
+ * surrounding/inner whitespace, missing/extra hyphens and invisible
+ * characters (zero-width spaces etc). All stored ids are canonical "NP-XXXX-XXXX".
+ */
+function canonicalLicenseId(raw) {
+  const norm = String(raw == null ? '' : raw).replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+  if (/^NP\d{4}[A-Z0-9]{4}$/.test(norm)) return `NP-${norm.slice(2, 6)}-${norm.slice(6, 10)}`;
+  return String(raw == null ? '' : raw).trim().toUpperCase();
+}
+
+async function findLicenseById(rawId) {
+  const canonical = canonicalLicenseId(rawId);
+  if (!canonical) return null;
+  let license = await License.findOne({ licenseId: canonical });
+  if (!license) {
+    // Fallback: case-insensitive match (covers any legacy/non-canonical stored ids).
+    const escaped = canonical.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    license = await License.findOne({ licenseId: { $regex: `^${escaped}$`, $options: 'i' } });
+  }
+  return license;
+}
+
+/**
  * The canonical payload that is digitally signed.
  * Field ORDER is critical - the client must rebuild the payload in exactly
  * this order and verify with the same JSON.stringify output.
@@ -41,11 +64,11 @@ function verifySignedPayload(payload, signature) {
 }
 
 async function getLicenseByPayload(payload) {
-  return License.findOne({ licenseId: payload.licenseId });
+  return findLicenseById(payload.licenseId);
 }
 
 async function validateOnline(licenseId, deviceId) {
-  const license = await License.findOne({ licenseId });
+  const license = await findLicenseById(licenseId);
   if (!license) return { valid: false, reason: 'LICENSE_NOT_FOUND' };
 
   const now = new Date();
@@ -83,8 +106,8 @@ async function validateOnline(licenseId, deviceId) {
 }
 
 async function bindDevice(licenseId, deviceId, deviceName, platform) {
-  const license = await License.findOne({ licenseId });
-  if (!license) return { ok: false, reason: 'LICENSE_NOT_FOUND' };
+  const license = await findLicenseById(licenseId);
+  if (!license) return { ok: false, reason: 'LICENSE_NOT_FOUND', receivedLicenseId: licenseId };
   const now = new Date();
   if (new Date(license.expiryDate) < now || license.status === 'expired') {
     if (license.status !== 'expired') {
@@ -97,17 +120,17 @@ async function bindDevice(licenseId, deviceId, deviceName, platform) {
 
   let device = await Device.findOne({ deviceId });
   if (device) {
-    if (device.licenseId && device.licenseId !== licenseId) {
+    if (device.licenseId && device.licenseId !== license.licenseId) {
       return { ok: false, reason: 'DEVICE_BOUND_TO_ANOTHER_LICENSE' };
     }
-    device.licenseId = licenseId;
+    device.licenseId = license.licenseId;
     device.name = deviceName || device.name;
     device.platform = platform || device.platform;
     device.active = true;
     device.lastSeenAt = now;
     await device.save();
   } else {
-    const boundCount = await Device.countDocuments({ licenseId, active: true });
+    const boundCount = await Device.countDocuments({ licenseId: license.licenseId, active: true });
     if (boundCount >= license.maxDevices) {
       return { ok: false, reason: 'MAX_DEVICES_REACHED', maxDevices: license.maxDevices };
     }
@@ -127,6 +150,8 @@ async function bindDevice(licenseId, deviceId, deviceName, platform) {
 
 module.exports = {
   generateLicenseId,
+  canonicalLicenseId,
+  findLicenseById,
   buildSignedPayload,
   signLicense,
   verifySignedPayload,

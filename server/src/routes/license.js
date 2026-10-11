@@ -1,5 +1,4 @@
 const express = require('express');
-const License = require('../models/License');
 const keyService = require('../services/keyService');
 const licenseService = require('../services/licenseService');
 const Device = require('../models/Device');
@@ -59,7 +58,7 @@ router.get('/current', async (req, res, next) => {
   try {
     const { licenseId } = req.query;
     if (!licenseId) return res.status(400).json({ success: false, message: 'licenseId is required' });
-    const license = await License.findOne({ licenseId });
+    const license = await licenseService.findLicenseById(licenseId);
     if (!license) return res.status(404).json({ success: false, code: 'LICENSE_NOT_FOUND', message: 'License not found' });
     res.json({
       success: true,
