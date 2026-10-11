@@ -10,8 +10,14 @@ router.use(verifyToken);
 
 router.get('/', async (req, res, next) => {
   try {
-    const { search, category, lowStock, active, page = 1, limit = 100 } = req.query;
+    const { search, category, lowStock, active, page = 1, limit = 100, branch } = req.query;
     const query = {};
+    // Non-superadmin users are always scoped to their own branch.
+    if (req.userRole !== 'superadmin') {
+      if (req.userBranch) query.branch = req.userBranch;
+    } else if (branch) {
+      query.branch = branch;
+    }
     if (category) query.category = category;
     if (active !== undefined) query.active = active === 'true' || active === '1';
     if (lowStock === 'true' || lowStock === '1') query.$expr = { $lte: ['$stock', '$minStock'] };
@@ -63,6 +69,7 @@ router.post('/', requireRoles('superadmin', 'admin'), async (req, res, next) => 
     const product = await Product.create({
       clientId: genClientId('prod'),
       categoryClientId: categoryClientId || undefined,
+      branch: (req.userRole !== 'superadmin' && req.userBranch) ? req.userBranch : (req.body.branch || undefined),
       name,
       sku,
       barcode: barcode || undefined,

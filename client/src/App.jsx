@@ -1,6 +1,7 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { BranchProvider } from './context/BranchContext';
 import { SyncProvider } from './context/SyncContext';
 import { ToastProvider } from './context/ToastContext';
 import LicenseGate from './components/LicenseGate';
@@ -18,6 +19,7 @@ import Inventory from './pages/Inventory';
 import Invoices from './pages/Invoices';
 import Reports from './pages/Reports';
 import Users from './pages/Users';
+import Branches from './pages/Branches';
 import LicensePage from './pages/LicensePage';
 import LicenseAdmin from './pages/LicenseAdmin';
 import Settings from './pages/Settings';
@@ -28,9 +30,12 @@ function Protected({ children }) {
   return children;
 }
 
-function RoleRoute({ roles, children }) {
-  const { user } = useAuth();
-  if (user && roles.includes(user.role)) return children;
+function PermRoute({ perm, superadminOnly, children }) {
+  const { user, hasPermission, isSuperAdmin } = useAuth();
+  if (superadminOnly) {
+    return isSuperAdmin ? children : <Navigate to="/" replace />;
+  }
+  if (user && hasPermission(perm)) return children;
   return <Navigate to="/" replace />;
 }
 
@@ -44,26 +49,29 @@ function AppRoutes() {
         element={
           <Protected>
             <LicenseGate>
-              <SyncProvider>
-                <Layout>
-                  <Routes>
-                    <Route path="/" element={<Dashboard />} />
-                    <Route path="/billing" element={<Billing />} />
-                    <Route path="/products" element={<Products />} />
-                    <Route path="/categories" element={<RoleRoute roles={['superadmin', 'admin']}><Categories /></RoleRoute>} />
-                    <Route path="/customers" element={<Customers />} />
-                    <Route path="/purchases" element={<RoleRoute roles={['superadmin', 'admin']}><Purchases /></RoleRoute>} />
-                    <Route path="/inventory" element={<Inventory />} />
-                    <Route path="/invoices" element={<Invoices />} />
-                    <Route path="/reports" element={<RoleRoute roles={['superadmin', 'admin']}><Reports /></RoleRoute>} />
-                    <Route path="/users" element={<RoleRoute roles={['superadmin', 'admin']}><Users /></RoleRoute>} />
-                    <Route path="/license" element={<LicensePage />} />
-                    <Route path="/license-admin" element={<RoleRoute roles={['superadmin']}><LicenseAdmin /></RoleRoute>} />
-                    <Route path="/settings" element={<RoleRoute roles={['superadmin', 'admin']}><Settings /></RoleRoute>} />
-                    <Route path="*" element={<Navigate to="/" replace />} />
-                  </Routes>
-                </Layout>
-              </SyncProvider>
+              <BranchProvider>
+                <SyncProvider>
+                  <Layout>
+                    <Routes>
+                      <Route path="/" element={<Dashboard />} />
+                      <Route path="/billing" element={<Billing />} />
+                      <Route path="/products" element={<PermRoute perm="products.view"><Products /></PermRoute>} />
+                      <Route path="/categories" element={<PermRoute perm="categories.view"><Categories /></PermRoute>} />
+                      <Route path="/customers" element={<PermRoute perm="customers.view"><Customers /></PermRoute>} />
+                      <Route path="/purchases" element={<PermRoute perm="purchases.view"><Purchases /></PermRoute>} />
+                      <Route path="/inventory" element={<PermRoute perm="inventory.view"><Inventory /></PermRoute>} />
+                      <Route path="/invoices" element={<PermRoute perm="sales.view"><Invoices /></PermRoute>} />
+                      <Route path="/reports" element={<PermRoute perm="reports.view"><Reports /></PermRoute>} />
+                      <Route path="/branches" element={<PermRoute perm="branches.view"><Branches /></PermRoute>} />
+                      <Route path="/users" element={<PermRoute perm="users.view"><Users /></PermRoute>} />
+                      <Route path="/license" element={<PermRoute perm="license.manage"><LicensePage /></PermRoute>} />
+                      <Route path="/license-admin" element={<PermRoute superadminOnly><LicenseAdmin /></PermRoute>} />
+                      <Route path="/settings" element={<PermRoute perm="settings.view"><Settings /></PermRoute>} />
+                      <Route path="*" element={<Navigate to="/" replace />} />
+                    </Routes>
+                  </Layout>
+                </SyncProvider>
+              </BranchProvider>
             </LicenseGate>
           </Protected>
         }

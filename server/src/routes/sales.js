@@ -13,8 +13,13 @@ router.use(verifyToken);
 
 router.get('/', async (req, res, next) => {
   try {
-    const { from, to, paymentMode, cashier, search, page = 1, limit = 20 } = req.query;
+    const { from, to, paymentMode, cashier, search, page = 1, limit = 20, branch } = req.query;
     const query = {};
+    if (req.userRole !== 'superadmin') {
+      if (req.userBranch) query.branch = req.userBranch;
+    } else if (branch) {
+      query.branch = branch;
+    }
     if (from || to) {
       query.createdAt = {};
       if (from) query.createdAt.$gte = new Date(from);
@@ -55,6 +60,9 @@ router.post('/', licenseGuard, async (req, res, next) => {
     const payload = req.body;
     payload.syncSource = 'online';
     payload.cashierName = payload.cashierName || 'system';
+    if (req.userRole !== 'superadmin' && req.userBranch) {
+      payload.branch = req.userBranch;
+    }
     const result = await createSaleFromPayload(payload, { deviceId: payload.deviceId || 'online' });
     if (result.status === 'error') {
       return res.status(400).json({ success: false, message: result.message });

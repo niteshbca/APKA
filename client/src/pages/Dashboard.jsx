@@ -1,22 +1,37 @@
 import React, { useEffect, useState } from 'react';
 import api from '../api/axios';
-import { money, fmtDate } from '../utils/format';
+import { money } from '../utils/format';
+import { useBranch } from '../context/BranchContext';
+import { useAuth } from '../context/AuthContext';
 import { StatCard, Spinner, Card } from '../components/ui';
 
 export default function Dashboard() {
   const [data, setData] = useState(null);
+  const { activeBranch } = useBranch();
+  const { isSuperAdmin } = useAuth();
 
   useEffect(() => {
-    api.get('/dashboard').then((r) => setData(r.data.data)).catch(() => {});
-  }, []);
+    const params = {};
+    if (isSuperAdmin && activeBranch?._id) params.branch = activeBranch._id;
+    setData(null);
+    api.get('/dashboard', { params }).then((r) => setData(r.data.data)).catch(() => {});
+  }, [activeBranch, isSuperAdmin]);
 
   if (!data) return <Spinner />;
 
-  const { today, totals, productCount, lowStockCount, lowStockProducts, customerCount } = data;
+  const { today, totals, productCount, lowStockCount, lowStockProducts, customerCount, trend = [], topProducts = [], paymentSplit = {}, branchStats = [] } = data;
+
+  const maxTrend = Math.max(1, ...trend.map((t) => t.sales));
+  const payTotal = (paymentSplit.cash || 0) + (paymentSplit.upi || 0) + (paymentSplit.card || 0) || 1;
+  const payPct = (v) => Math.round(((v || 0) / payTotal) * 100);
 
   return (
     <div>
-      <h2 style={{ marginBottom: 18 }}>Dashboard</h2>
+      <div className="flex-between mb-16">
+        <h2>Dashboard</h2>
+        {activeBranch && <span className="badge badge-info">🏬 {activeBranch.name}</span>}
+      </div>
+
       <div className="stat-grid">
         <StatCard label="Today's Sales" value={money(today.sales)} sub={`${today.invoices} invoices today`} icon="💰" tone="success" />
         <StatCard label="Today's Profit" value={money(today.profit)} sub="Gross margin today" icon="📈" tone="info" />
@@ -28,8 +43,101 @@ export default function Dashboard() {
         <StatCard label="Low Stock Items" value={lowStockCount} sub="Need restocking" icon="⚠️" tone="danger" />
       </div>
 
+      <div className="dashboard-grid">
+        <Card title="Sales Trend (Last 7 Days)">
+          <div className="bar-chart">
+            {trend.map((t) => (
+              <div key={t.date} className="bar-col">
+                <div className="bar-value">{money(t.sales)}</div>
+                <div className="bar-track">
+                  <div className="bar-fill" style={{ height: `${Math.max(3, (t.sales / maxTrend) * 100)}%` }} />
+                </div>
+                <div className="bar-label">{t.date}</div>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        <Card title="Payment Mode Split (Today)">
+          <div className="payment-split">
+            <div className="split-row">
+              <span>💵 Cash</span>
+              <div className="split-bar"><div className="split-fill cash" style={{ width: `${payPct(paymentSplit.cash)}%` }} /></div>
+              <span className="split-pct">{payPct(paymentSplit.cash)}%</span>
+            </div>
+            <div className="split-row">
+              <span>📱 UPI</span>
+              <div className="split-bar"><div className="split-fill upi" style={{ width: `${payPct(paymentSplit.upi)}%` }} /></div>
+              <span className="split-pct">{payPct(paymentSplit.upi)}%</span>
+            </div>
+            <div className="split-row">
+              <span>💳 Card</span>
+              <div className="split-bar"><div className="split-fill card" style={{ width: `${payPct(paymentSplit.card)}%` }} /></div>
+              <span className="split-pct">{payPct(paymentSplit.card)}%</span>
+            </div>
+            <div className="split-total">
+              <span className="muted small">Lifetime collection</span>
+              <strong>{money(payTotal)}</strong>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      <div className="dashboard-grid mt-16">
+        <Card title="Top Selling Products">
+          {topProducts.length === 0 ? (
+            <div className="muted small">No sales data yet.</div>
+          ) : (
+            <table className="table">
+              <thead><tr><th>#</th><th>Product</th><th>Qty Sold</th><th style={{ textAlign: 'right' }}>Revenue</th></tr></thead>
+              <tbody>
+                {topProducts.map((p, i) => (
+                  <tr key={p.sku || p.name}>
+                    <td><span className={`rank-badge rank-${i + 1}`}>{i + 1}</span></td>
+                    <td>
+                      <div style={{ fontWeight: 600 }}>{p.name}</div>
+                      <div className="muted small">{p.sku}</div>
+                    </td>
+                    <td>{p.qty}</td>
+                    <td style={{ textAlign: 'right', fontWeight: 700 }}>{money(p.revenue)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </Card>
+
+        {isSuperAdmin && branchStats.length > 0 ? (
+          <Card title="Branch Performance (All Time)">
+            <table className="table">
+              <thead><tr><th>Branch</th><th>Invoices</th><th style={{ textAlign: 'right' }}>Sales</th></tr></thead>
+              <tbody>
+                {branchStats.map((b, i) => (
+                  <tr key={b._id}>
+                    <td>
+                      <div style={{ fontWeight: 600 }}>{b.name}</div>
+                      <div className="muted small">{b.code}</div>
+                    </td>
+                    <td>{b.invoices}</td>
+                    <td style={{ textAlign: 'right', fontWeight: 700 }}>{money(b.sales)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Card>
+        ) : (
+          <Card title="Today at a glance">
+            <div className="muted">
+              {today.invoices === 0
+                ? <>No sales yet today. Open the <b>Billing</b> screen to start billing. Works offline too — invoices sync automatically when the internet returns.</>
+                : <>Great going! You've made <b>{today.invoices}</b> sales today worth <b>{money(today.sales)}</b>.</>}
+            </div>
+          </Card>
+        )}
+      </div>
+
       {lowStockProducts.length > 0 && (
-        <Card title="Low Stock Alerts">
+        <Card title="Low Stock Alerts" className="mt-16">
           <table className="table">
             <thead>
               <tr><th>Product</th><th>SKU</th><th>Stock</th><th>Min Stock</th><th>Status</th></tr>
@@ -46,14 +154,6 @@ export default function Dashboard() {
               ))}
             </tbody>
           </table>
-        </Card>
-      )}
-
-      {today.invoices === 0 && (
-        <Card title="Today at a glance">
-          <div className="muted">
-            No sales yet today. Open the <b>Billing</b> screen to start billing. Works offline too — invoices sync automatically when the internet returns.
-          </div>
         </Card>
       )}
     </div>

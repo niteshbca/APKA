@@ -4,6 +4,7 @@ const purchaseSchema = new mongoose.Schema(
   {
     clientId: { type: String, unique: true, sparse: true, index: true },
     productClientId: { type: String, index: true },
+    branch: { type: mongoose.Schema.Types.ObjectId, ref: 'Branch', index: true },
     syncedFromCloud: { type: Boolean, default: false },
     product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true, index: true },
     name: { type: String, required: true, trim: true },

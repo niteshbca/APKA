@@ -13,7 +13,7 @@ A complete, production-ready **POS Billing Software** built with the **MERN stac
 | Database   | MongoDB Atlas (Mongoose)                              |
 | Offline DB | IndexedDB (custom promise wrapper, no extra deps)     |
 | PWA        | Web App Manifest + Service Worker (installable, offline) |
-| Auth       | JWT + role-based access (superadmin / admin / cashier)|
+| Auth       | JWT + role-based access (superadmin / admin / manager / cashier) + PIN login |
 | License    | RSA-2048 signed licenses, WebCrypto verification      |
 | Barcode    | Keyboard-emulation scanner support                    |
 | Printing   | A4 and 58mm/80mm thermal invoices                     |
@@ -35,15 +35,16 @@ pos/
 │   │   ├── setup.js          # keys + seed admin
 │   │   ├── generateKeys.js   # RSA key pair + copies public key to client
 │   │   ├── seedAdmin.js      # owner/admin/cashier demo accounts
+│   │   ├── seedData.js       # multi-branch demo data (6 branches, users, products, sales)
 │   │   └── licenseAdmin.js   # CLI license management
 │   └── src/
 │       ├── server.js
 │       ├── config/db.js
-│       ├── middleware/       # auth.js, license.js (server-side enforcement), errorHandler.js
-│       ├── models/           # 13 models: User, Product, Category, Customer, Sale,
+│       ├── middleware/       # auth.js (roles/permissions/branch), license.js (server-side enforcement), errorHandler.js
+│       ├── models/           # Branch, User, Product, Category, Customer, Sale,
 │       │                     #   Invoice, Purchase, StockTransaction, License, Device,
 │       │                     #   SyncQueue, Counter, Setting
-│       ├── routes/           # auth, users, products, categories, customers, sales,
+│       ├── routes/           # auth, users, branches, products, categories, customers, sales,
 │       │                     #   invoices, purchases, stock, dashboard, reports,
 │       │                     #   license, adminLicense, devices, sync, settings
 │       └── services/         # keyService, licenseService, invoiceService,
@@ -51,14 +52,14 @@ pos/
 └── client/                   # React frontend
     └── src/
         ├── api/axios.js          # axios instance + JWT interceptor
-        ├── context/              # Auth, Sync, Toast contexts
+        ├── context/              # Auth (roles/permissions/PIN), Branch, Sync, Toast contexts
         ├── db/                   # IndexedDB wrapper + offlineService (offline-first)
         ├── sync/engine.js        # ONLINE/OFFLINE/SYNCING/SYNC COMPLETED/SYNC FAILED
         ├── utils/                # gst, print, barcode, crypto, license (signed verification)
-        ├── components/           # Layout, LicenseGate, ui kit, Billing widgets
-        └── pages/                # Dashboard, Billing, Products, Categories, Customers,
-                                  # Purchases, Inventory, Invoices, Reports, Users,
-                                  # License, LicenseAdmin, Settings, Login, Activation, Expired
+        ├── components/           # Layout (branch selector, role nav), LicenseGate, ui kit, Billing widgets
+        └── pages/                # Dashboard, Billing (fullscreen), Products, Categories, Customers,
+                                  # Purchases, Inventory, Invoices, Reports, Users, Branches,
+                                  # License, LicenseAdmin, Settings, Login (PIN pad), Activation, Expired
 ```
 
 ---
@@ -99,6 +100,16 @@ MONGODB_URI=mongodb://<user>:<password>@ac-iekqld9-shard-00-00.bqmxco3.mongodb.n
 - Copies the **public key** into `client/src/utils/licensePublicKey.js` so the browser can verify licenses **fully offline**.
 - Seeds users: `owner/owner123` (superadmin), `admin/admin123` (admin), `cashier/cashier123` (cashier).
 
+### Multi-branch demo data (optional)
+
+Seed 6 branches, 12 users, ~580 products, customers, purchases and ~580 sales with realistic random data:
+
+```bash
+npm run --prefix server seed:data
+```
+
+> Run this **before** activating a license if you want a full demo. Each nonzero role user is scoped to one branch (superadmin `owner` sees everything and can compare all branches on the dashboard).
+
 ---
 
 ## 2. How to Run
@@ -118,11 +129,32 @@ Open **http://localhost:5173** and log in as `admin` / `admin123`.
 
 ## 3. Demo / Test Login Accounts
 
+After `npm run setup`:
+
 | Username | Password    | Role       |
 | -------- | ----------- | ---------- |
 | `owner`  | `owner123`  | superadmin |
 | `admin`  | `admin123`  | admin      |
 | `cashier`| `cashier123`| cashier    |
+
+After `npm run seed:data` (multi-branch demo):
+
+| Username   | Password     | Role       | Branch    | PIN  |
+| ---------- | ------------ | ---------- | --------- | ---- |
+| `owner`    | `owner123`   | superadmin | all       | —    |
+| `admin`    | `admin123`   | admin      | Main      | —    |
+| `rajesh`   | `rajesh123`  | admin      | Delhi     | —    |
+| `sunil`    | `sunil123`   | manager    | Bangalore | —    |
+| `prakash`  | `prakash123` | manager    | Thane     | —    |
+| `anil`     | `anil123`    | manager    | Pune      | —    |
+| `ravi`     | `ravi123`    | cashier    | Main      | 1234 |
+| `sita`     | `sita123`    | cashier    | Bandra    | 2345 |
+| `ganesh`   | `ganesh123`  | cashier    | Pune      | 3456 |
+| `kavita`   | `kavita123`  | cashier    | Delhi     | 4567 |
+| `deepak`   | `deepak123`  | cashier    | Bangalore | 5678 |
+| `anita`    | `anita123`   | cashier    | Thane     | 6789 |
+
+Cashiers can also sign in with just their **4-digit PIN** (PIN pad on the login screen). Non-superadmin users only see **their own branch's data** (products, categories, customers, sales, dashboard); a branch selector appears for superadmin.
 
 ---
 
@@ -221,13 +253,14 @@ Statuses shown in the sidebar: `● ONLINE`, `● OFFLINE`, `⟳ SYNCING`, `✓ 
 
 ## 7. Features
 
-- **Auth**: login, JWT, role-based access control.
-- **Products**: add/edit/delete, SKU, barcode, category, purchase/selling price, GST, stock, min-stock alert, search, barcode search.
-- **Billing**: fast keyboard-driven screen (`F2` search, `F9` pay, `F4` new bill), barcode scanner support, cart with qty +/- / remove / per-line discount, GST buckets, order discount, customer selection, cash/UPI/card payment, invoice preview + print (A4 & thermal).
+- **Auth**: login, JWT, role-based access control (superadmin / admin / manager / cashier), permission-gated menus, **PIN login** for cashiers.
+- **Multi-branch**: unlimited branches, per-branch products/categories/customers/sales, staff assigned to a branch, branch comparison on the dashboard, `seed:data` demo generator.
+- **Products**: add/edit/delete, SKU, barcode, category, image, purchase/selling price, GST, stock, min-stock alert, search, barcode search.
+- **Billing**: fast keyboard-driven screen (`F2` search, `F9` pay, `F4` new bill), barcode scanner support, cart with qty +/- / remove / per-line discount, GST buckets, order discount, customer selection, cash/UPI/card payment, invoice preview + print (A4 & thermal), **fullscreen mode** with back button and recent-items quick add.
 - **Inventory**: auto stock reduction on sale, purchase entry, stock adjustment, stock history, low-stock alerts.
 - **Customers**: name/mobile/address/GST, purchase history.
 - **Invoices**: unique invoice number, business details, customer details, line items, totals, payment mode, date/time, printable.
-- **Dashboard**: today's sales, invoices, profit, products, low stock, cash/UPI/card collection.
+- **Dashboard**: today's sales, invoices, profit, products, low stock, cash/UPI/card collection, **7-day sales trend, top products, payment split, per-branch stats**.
 - **Reports**: daily & monthly sales, product-wise, customer-wise, payment-wise, profit, stock, date-range filter.
 - **License Admin panel** (superadmin): create/renew/suspend/activate licenses, set max devices, view customers & bound devices, block devices.
 
@@ -258,10 +291,12 @@ Statuses shown in the sidebar: `● ONLINE`, `● OFFLINE`, `⟳ SYNCING`, `✓ 
 | Method | Endpoint                    | Description                                    |
 | ------ | --------------------------- | ---------------------------------------------- |
 | POST   | `/api/auth/login`           | Login → JWT                                    |
-| GET    | `/api/dashboard`            | Today + totals dashboard                       |
-| CRUD   | `/api/products`             | Product management (search/barcode/category)   |
-| CRUD   | `/api/categories`           | Category management                            |
-| CRUD   | `/api/customers`            | Customers + `/history`                         |
+| POST   | `/api/auth/login-pin`       | Cashier PIN login → JWT                        |
+| GET    | `/api/dashboard`            | Today + totals dashboard (branch-aware, trend, top products, branch stats) |
+| CRUD   | `/api/branches`             | Branch management (main branch protected)      |
+| CRUD   | `/api/products`             | Product management (search/barcode/category, branch-scoped) |
+| CRUD   | `/api/categories`           | Category management (branch-scoped)            |
+| CRUD   | `/api/customers`            | Customers + `/history` (branch-scoped)         |
 | POST   | `/api/sales`                | Create sale (online) — stock + invoice auto    |
 | GET    | `/api/invoices`             | Invoice history                                |
 | CRUD   | `/api/purchases`            | Purchase entries (adds stock)                  |

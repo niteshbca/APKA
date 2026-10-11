@@ -3,13 +3,17 @@ const mongoose = require('mongoose');
 const categorySchema = new mongoose.Schema(
   {
     clientId: { type: String, unique: true, sparse: true, index: true },
+    branch: { type: mongoose.Schema.Types.ObjectId, ref: 'Branch', index: true },
     syncedFromCloud: { type: Boolean, default: false },
-    name: { type: String, required: true, unique: true, trim: true },
-    slug: { type: String, unique: true, trim: true },
+    name: { type: String, required: true, trim: true },
+    slug: { type: String, trim: true },
     description: { type: String, trim: true },
   },
   { timestamps: true }
 );
+
+categorySchema.index({ branch: 1, name: 1 }, { unique: true });
+categorySchema.index({ branch: 1, slug: 1 }, { unique: true, sparse: true });
 
 categorySchema.pre('save', function (next) {
   if (!this.slug) {

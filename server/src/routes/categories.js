@@ -11,7 +11,13 @@ router.use(verifyToken);
 
 router.get('/', async (req, res, next) => {
   try {
-    const categories = await Category.find().sort({ name: 1 });
+    const query = {};
+    if (req.userRole !== 'superadmin') {
+      if (req.userBranch) query.branch = req.userBranch;
+    } else if (req.query.branch) {
+      query.branch = req.query.branch;
+    }
+    const categories = await Category.find(query).sort({ name: 1 });
     res.json({ success: true, data: categories });
   } catch (err) {
     next(err);

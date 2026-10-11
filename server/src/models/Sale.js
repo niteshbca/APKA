@@ -22,6 +22,7 @@ const saleSchema = new mongoose.Schema(
   {
     invoiceNo: { type: String, required: true, unique: true, trim: true },
     clientSaleId: { type: String, unique: true, sparse: true },
+    branch: { type: mongoose.Schema.Types.ObjectId, ref: 'Branch', index: true },
     clientDeviceId: { type: String, index: true },
     customerClientId: { type: String, index: true },
     customer: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },

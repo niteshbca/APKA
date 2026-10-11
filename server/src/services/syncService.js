@@ -143,6 +143,7 @@ async function createSaleFromPayload(payload, { deviceId, cashier = null } = {})
   const sale = await Sale.create({
     invoiceNo,
     clientSaleId: payload.clientSaleId,
+    branch: payload.branch || payload.branchId || undefined,
     clientDeviceId: deviceId,
     customerClientId: customerClientId || undefined,
     customer: customerId,

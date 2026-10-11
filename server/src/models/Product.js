@@ -4,6 +4,7 @@ const productSchema = new mongoose.Schema(
   {
     clientId: { type: String, unique: true, sparse: true, index: true },
     categoryClientId: { type: String, index: true },
+    branch: { type: mongoose.Schema.Types.ObjectId, ref: 'Branch', index: true },
     syncedFromCloud: { type: Boolean, default: false },
     name: { type: String, required: true, trim: true, index: true },
     sku: { type: String, required: true, unique: true, trim: true },
@@ -30,6 +31,7 @@ productSchema.methods.toSafeJSON = function () {
     _id: this._id,
     clientId: this.clientId || '',
     categoryClientId: this.categoryClientId || '',
+    branch: this.branch,
     name: this.name,
     sku: this.sku,
     barcode: this.barcode || '',

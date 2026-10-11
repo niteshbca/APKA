@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import db from '../db';
 import {
@@ -12,6 +13,8 @@ import { money } from '../utils/format';
 import { getDeviceId } from '../utils/license';
 import { useToast } from '../context/ToastContext';
 import { useSync } from '../context/SyncContext';
+import { useAuth } from '../context/AuthContext';
+import { useBranch } from '../context/BranchContext';
 import { Button, Card, Modal, Field, Badge } from '../components/ui';
 import PaymentModal from '../components/Billing/PaymentModal';
 import InvoicePreview from '../components/Billing/InvoicePreview';
@@ -70,14 +73,20 @@ export default function Billing() {
   const [activeCategory, setActiveCategory] = useState('all');
   const [scanInput, setScanInput] = useState('');
   const [recentItems, setRecentItems] = useState([]);
+  const [showRecent, setShowRecent] = useState(false);
   const [priceCheckMode, setPriceCheckMode] = useState(false);
   const [priceCheckProduct, setPriceCheckProduct] = useState(null);
+  const [fullscreen, setFullscreen] = useState(false);
   const searchRef = useRef(null);
   const scanRef = useRef(null);
+  const priceCheckRef = useRef(false);
   const { toast } = useToast();
   const sync = useSync();
+  const navigate = useNavigate();
+  const { user: authUser } = useAuth();
+  const { activeBranch } = useBranch();
   const online = sync.status !== 'OFFLINE';
-  const user = JSON.parse(localStorage.getItem('pos_user') || '{}');
+  const user = authUser || JSON.parse(localStorage.getItem('pos_user') || '{}');
 
   const loadProducts = useCallback(async () => {
     const local = await getAllProducts();
@@ -163,8 +172,14 @@ export default function Billing() {
       if (looksLikeBarcode(code) || code.length >= 6) {
         const found = findProductByBarcodeLocal(products, code);
         if (found) {
-          addToCart(found);
-          toast(`Scanned: ${found.name}`, 'info');
+          if (priceCheckRef.current) {
+            setPriceCheckProduct(found);
+            setPriceCheckMode(true);
+            toast(`Price check: ${found.name} — ${money(found.sellingPrice)}`, 'info');
+          } else {
+            addToCart(found);
+            toast(`Scanned: ${found.name}`, 'info');
+          }
           setScanInput('');
         } else {
           toast(`No product for barcode: ${code}`, 'error');
@@ -305,6 +320,7 @@ export default function Billing() {
       changeDue: payment.changeDue,
       cashierName,
       deviceId,
+      branch: activeBranch?._id,
     };
 
     try {
@@ -415,6 +431,28 @@ export default function Billing() {
     toast('Print preview (feature coming soon)', 'info');
   };
 
+  const toggleFullscreen = async () => {
+    try {
+      if (!document.fullscreenElement) {
+        await document.documentElement.requestFullscreen();
+      } else {
+        await document.exitFullscreen();
+      }
+    } catch {
+      /* ignore */
+    }
+  };
+
+  useEffect(() => {
+    const onChange = () => setFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', onChange);
+    return () => document.removeEventListener('fullscreenchange', onChange);
+  }, []);
+
+  useEffect(() => {
+    priceCheckRef.current = priceCheckMode;
+  }, [priceCheckMode]);
+
   useEffect(() => {
     const handler = (e) => {
       if (e.key === 'F2') {
@@ -432,23 +470,32 @@ export default function Billing() {
       } else if (e.key === 'F8') {
         e.preventDefault();
         parkBill();
+      } else if (e.key === 'F11') {
+        e.preventDefault();
+        toggleFullscreen();
+      } else if (e.key === 'Escape' && fullscreen) {
+        document.exitFullscreen?.();
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [cart.length]);
+  }, [cart.length, fullscreen]);
 
   const now = new Date();
   const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
   const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-  const outletName = settings.outletName || 'Main Outlet';
+  const outletName = activeBranch?.name || settings.outletName || 'Main Outlet';
 
   return (
-    <div className="pos-layout">
+    <div className={`pos-layout ${fullscreen ? 'pos-fullscreen' : ''}`}>
       {/* TOP BAR */}
       <header className="pos-topbar">
         <div className="topbar-left">
+          <button className="btn btn-ghost btn-sm" onClick={() => navigate('/')} title="Back to Dashboard">
+            ← Back
+          </button>
           <span className="pos-logo">NiteshPro POS</span>
+          {activeBranch && <span className="badge badge-info hide-mobile">🏬 {activeBranch.name}</span>}
         </div>
         <div className="topbar-center">
           <div className="search-box-large">
@@ -472,6 +519,9 @@ export default function Billing() {
           </Button>
           <Button variant="ghost" size="sm" onClick={printBill} title="Print">
             🖨 Print
+          </Button>
+          <Button variant="ghost" size="sm" onClick={toggleFullscreen} title="F11 - Fullscreen">
+            {fullscreen ? '🡼 Exit' : '⛶ Full'}
           </Button>
           <div className="user-profile">
             <span className="user-role">{user.role || 'Cashier'}</span>
@@ -664,10 +714,10 @@ export default function Billing() {
           </div>
         </div>
         <div className="bottombar-center">
-          <Button variant="ghost" size="sm" onClick={() => setPriceCheckMode(!priceCheckMode)}>
+          <Button variant={priceCheckMode ? 'warning' : 'ghost'} size="sm" onClick={() => setPriceCheckMode(!priceCheckMode)}>
             {priceCheckMode ? '✕ Exit Price Check' : '🔍 Price Check'}
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => { /* recent items */ }}>
+          <Button variant="ghost" size="sm" onClick={() => setShowRecent(true)}>
             🕐 Recent Items
           </Button>
         </div>
@@ -678,6 +728,28 @@ export default function Billing() {
           </div>
         </div>
       </footer>
+
+      {/* Recent Items Modal */}
+      {showRecent && (
+        <Modal open={true} title="Recent Items" onClose={() => setShowRecent(false)} width={460}>
+          {recentItems.length === 0 ? (
+            <div className="muted small">No recent items yet. Items you add to a bill will appear here for quick re-add.</div>
+          ) : (
+            <div className="recent-list">
+              {recentItems.map((it) => (
+                <button key={it.sku} className="recent-item" onClick={() => { addRecentItem(it); setShowRecent(false); }}>
+                  <span className="placeholder" style={{ fontSize: 20 }}>{getPlaceholderImage(it.categoryName)}</span>
+                  <span className="recent-item-info">
+                    <span className="recent-item-name">{it.name}</span>
+                    <span className="muted small">{money(it.price)} · {it.sku}</span>
+                  </span>
+                  <span className="badge badge-info">＋ Add</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </Modal>
+      )}
 
       {/* Customer selection modal */}
       <Modal open={showCustomerModal} title="Select or Add Customer" onClose={() => setShowCustomerModal(false)}>

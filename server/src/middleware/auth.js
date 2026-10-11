@@ -11,10 +11,37 @@ function verifyToken(req, res, next) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.userId = decoded.sub;
     req.userRole = decoded.role;
+    req.userBranch = decoded.branch;
+    req.userPermissions = decoded.permissions || [];
     next();
   } catch (err) {
     return res.status(401).json({ success: false, message: 'Invalid or expired token' });
   }
+}
+
+async function attachUser(req, res, next) {
+  try {
+    const user = await User.findById(req.userId).select('branch permissions role active').populate('branch', 'name code isActive');
+    if (user) {
+      req.userDoc = user;
+      req.userBranch = user.branch?._id || user.branch;
+      req.userPermissions = user.permissions || [];
+    }
+    next();
+  } catch (err) {
+    next(err);
+  }
+}
+
+function requirePermission(...perms) {
+  return (req, res, next) => {
+    if (req.userRole === 'superadmin') return next();
+    const hasPerm = perms.some(p => req.userPermissions.includes(p) || req.userPermissions.includes('*'));
+    if (!hasPerm) {
+      return res.status(403).json({ success: false, message: `Permission required: ${perms.join(' or ')}` });
+    }
+    next();
+  };
 }
 
 function requireRoles(...roles) {
@@ -26,4 +53,14 @@ function requireRoles(...roles) {
   };
 }
 
-module.exports = { verifyToken, requireRoles };
+function requireBranchAccess() {
+  return (req, res, next) => {
+    if (req.userRole === 'superadmin') return next();
+    if (!req.userBranch) {
+      return res.status(403).json({ success: false, message: 'No branch assigned' });
+    }
+    next();
+  };
+}
+
+module.exports = { verifyToken, requireRoles, requirePermission, requireBranchAccess, attachUser };

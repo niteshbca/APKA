@@ -10,6 +10,7 @@
     "setup": "node scripts/setup.js",
     "keys": "node scripts/generateKeys.js",
     "seed": "node scripts/seedAdmin.js",
+    "seed:data": "node scripts/seedData.js",
     "license": "node scripts/licenseAdmin.js"
   },
   "dependencies": {

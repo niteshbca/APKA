@@ -971,4 +971,227 @@ a { color: var(--primary); text-decoration: none; }
   .product-price { font-size: 14px; }
 }
 
+/* ============================ LOGIN TABS / PIN ============================ */
+.login-tabs {
+  display: flex;
+  gap: 6px;
+  background: var(--bg);
+  padding: 4px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+.login-tabs button {
+  flex: 1;
+  padding: 9px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: 0.15s;
+}
+.login-tabs button.active {
+  background: #fff;
+  color: var(--primary);
+  box-shadow: var(--shadow);
+}
+
+.pin-display {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin: 18px 0 22px;
+}
+.pin-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  transition: 0.15s;
+}
+.pin-dot.filled {
+  background: var(--primary);
+  border-color: var(--primary);
+  transform: scale(1.1);
+}
+.pin-pad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.pin-pad button {
+  padding: 16px;
+  font-size: 20px;
+  font-weight: 700;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+  transition: 0.1s;
+}
+.pin-pad button:hover { background: var(--primary-light); border-color: var(--primary); }
+.pin-pad button:active { transform: scale(0.96); }
+
+/* ============================ BRANCH DROPDOWN ============================ */
+.branch-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow-lg);
+  min-width: 240px;
+  z-index: 61;
+  overflow: hidden;
+}
+.branch-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+}
+.branch-option:hover { background: var(--bg); }
+.branch-option.active { background: var(--primary-light); color: var(--primary); }
+
+/* ============================ DASHBOARD CHARTS ============================ */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 900px) { .dashboard-grid { grid-template-columns: 1fr; } }
+
+.bar-chart {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px;
+  height: 220px;
+  padding-top: 24px;
+}
+.bar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+}
+.bar-value {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  white-space: nowrap;
+}
+.bar-track {
+  flex: 1;
+  width: 100%;
+  max-width: 46px;
+  background: var(--bg);
+  border-radius: 6px 6px 0 0;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+}
+.bar-fill {
+  width: 100%;
+  background: linear-gradient(180deg, #6366f1, #4f46e5);
+  border-radius: 6px 6px 0 0;
+  transition: height 0.4s ease;
+  min-height: 3px;
+}
+.bar-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 6px;
+  font-weight: 600;
+}
+
+.payment-split { display: flex; flex-direction: column; gap: 16px; }
+.split-row {
+  display: grid;
+  grid-template-columns: 76px 1fr 44px;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.split-bar {
+  height: 12px;
+  background: var(--bg);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.split-fill { height: 100%; border-radius: 6px; transition: width 0.4s ease; }
+.split-fill.cash { background: #16a34a; }
+.split-fill.upi { background: #0284c7; }
+.split-fill.card { background: #d97706; }
+.split-pct { text-align: right; color: var(--text-muted); font-size: 12px; }
+.split-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+  font-size: 15px;
+}
+
+.rank-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 800;
+  background: var(--bg);
+  color: var(--text-muted);
+}
+.rank-1 { background: #fef3c7; color: #d97706; }
+.rank-2 { background: #e5e7eb; color: #4b5563; }
+.rank-3 { background: #fde8d7; color: #c2410c; }
+
+/* ============================ RECENT ITEMS ============================ */
+.recent-list { display: flex; flex-direction: column; gap: 8px; }
+.recent-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+  transition: 0.15s;
+}
+.recent-item:hover { border-color: var(--primary); background: var(--primary-light); }
+.recent-item-info { display: flex; flex-direction: column; flex: 1; }
+.recent-item-name { font-weight: 600; font-size: 13px; color: var(--text); }
+
+/* ============================ FULLSCREEN POS ============================ */
+.pos-layout.pos-fullscreen .pos-left { width: 420px; }
+.pos-fullscreen .pos-right { background: var(--bg); }
+.pos-layout.pos-fullscreen { position: fixed; inset: 0; z-index: 9999; overflow: hidden; }
+
+.btn-link {
+  color: var(--primary);
+  font-weight: 600;
+  cursor: pointer;
+}
+
 

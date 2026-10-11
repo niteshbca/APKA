@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const customerSchema = new mongoose.Schema(
   {
     clientId: { type: String, unique: true, sparse: true, index: true },
+    branch: { type: mongoose.Schema.Types.ObjectId, ref: 'Branch', index: true },
     syncedFromCloud: { type: Boolean, default: false },
     name: { type: String, required: true, trim: true },
     mobile: { type: String, trim: true, index: true },
@@ -19,6 +20,7 @@ customerSchema.methods.toSafeJSON = function () {
   return {
     _id: this._id,
     clientId: this.clientId || '',
+    branch: this.branch,
     name: this.name,
     mobile: this.mobile || '',
     email: this.email || '',

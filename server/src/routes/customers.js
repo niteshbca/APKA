@@ -12,8 +12,13 @@ router.use(verifyToken);
 
 router.get('/', async (req, res, next) => {
   try {
-    const { search, page = 1, limit = 100 } = req.query;
+    const { search, page = 1, limit = 100, branch } = req.query;
     const query = {};
+    if (req.userRole !== 'superadmin') {
+      if (req.userBranch) query.branch = req.userBranch;
+    } else if (branch) {
+      query.branch = branch;
+    }
     if (search) {
       query.$or = [
         { name: { $regex: search, $options: 'i' } },
