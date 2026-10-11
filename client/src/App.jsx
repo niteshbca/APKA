@@ -1,11 +1,12 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { BranchProvider } from './context/BranchContext';
 import { SyncProvider } from './context/SyncContext';
 import { ToastProvider } from './context/ToastContext';
 import LicenseGate from './components/LicenseGate';
 import Layout from './components/Layout';
+import ErrorBoundary from './components/ErrorBoundary';
 
 import Login from './pages/Login';
 import Downloads from './pages/Downloads';
@@ -40,6 +41,7 @@ function PermRoute({ perm, superadminOnly, children }) {
 }
 
 function AppRoutes() {
+  const location = useLocation();
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
@@ -52,23 +54,25 @@ function AppRoutes() {
               <BranchProvider>
                 <SyncProvider>
                   <Layout>
-                    <Routes>
-                      <Route path="/" element={<Dashboard />} />
-                      <Route path="/billing" element={<Billing />} />
-                      <Route path="/products" element={<PermRoute perm="products.view"><Products /></PermRoute>} />
-                      <Route path="/categories" element={<PermRoute perm="categories.view"><Categories /></PermRoute>} />
-                      <Route path="/customers" element={<PermRoute perm="customers.view"><Customers /></PermRoute>} />
-                      <Route path="/purchases" element={<PermRoute perm="purchases.view"><Purchases /></PermRoute>} />
-                      <Route path="/inventory" element={<PermRoute perm="inventory.view"><Inventory /></PermRoute>} />
-                      <Route path="/invoices" element={<PermRoute perm="sales.view"><Invoices /></PermRoute>} />
-                      <Route path="/reports" element={<PermRoute perm="reports.view"><Reports /></PermRoute>} />
-                      <Route path="/branches" element={<PermRoute perm="branches.view"><Branches /></PermRoute>} />
-                      <Route path="/users" element={<PermRoute perm="users.view"><Users /></PermRoute>} />
-                      <Route path="/license" element={<PermRoute perm="license.manage"><LicensePage /></PermRoute>} />
-                      <Route path="/license-admin" element={<PermRoute superadminOnly><LicenseAdmin /></PermRoute>} />
-                      <Route path="/settings" element={<PermRoute perm="settings.view"><Settings /></PermRoute>} />
-                      <Route path="*" element={<Navigate to="/" replace />} />
-                    </Routes>
+                    <ErrorBoundary key={location.pathname}>
+                      <Routes>
+                        <Route path="/" element={<Dashboard />} />
+                        <Route path="/billing" element={<Billing />} />
+                        <Route path="/products" element={<PermRoute perm="products.view"><Products /></PermRoute>} />
+                        <Route path="/categories" element={<PermRoute perm="categories.view"><Categories /></PermRoute>} />
+                        <Route path="/customers" element={<PermRoute perm="customers.view"><Customers /></PermRoute>} />
+                        <Route path="/purchases" element={<PermRoute perm="purchases.view"><Purchases /></PermRoute>} />
+                        <Route path="/inventory" element={<PermRoute perm="inventory.view"><Inventory /></PermRoute>} />
+                        <Route path="/invoices" element={<PermRoute perm="sales.view"><Invoices /></PermRoute>} />
+                        <Route path="/reports" element={<PermRoute perm="reports.view"><Reports /></PermRoute>} />
+                        <Route path="/branches" element={<PermRoute perm="branches.view"><Branches /></PermRoute>} />
+                        <Route path="/users" element={<PermRoute perm="users.view"><Users /></PermRoute>} />
+                        <Route path="/license" element={<PermRoute perm="license.manage"><LicensePage /></PermRoute>} />
+                        <Route path="/license-admin" element={<PermRoute superadminOnly><LicenseAdmin /></PermRoute>} />
+                        <Route path="/settings" element={<PermRoute perm="settings.view"><Settings /></PermRoute>} />
+                        <Route path="*" element={<Navigate to="/" replace />} />
+                      </Routes>
+                    </ErrorBoundary>
                   </Layout>
                 </SyncProvider>
               </BranchProvider>

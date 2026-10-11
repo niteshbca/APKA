@@ -1,5 +1,6 @@
 import React from 'react';
 import { money } from '../../utils/format';
+import { Button } from '../ui';
 
 export default function InvoicePreview({ invoice, settings, onClose, onPrintA4, onPrintThermal, synced, invoiceNo }) {
   const s = settings || {};
