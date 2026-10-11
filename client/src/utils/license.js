@@ -69,12 +69,23 @@ export async function saveValidationState({ valid, serverTime, reason }) {
   });
 }
 
-async function resolvePublicKey() {
+export async function savePublicKey(publicKey) {
+  if (!publicKey) return;
+  await db.put('settings', { key: 'license_public_key', publicKey, fetchedAt: new Date().toISOString() });
+}
+
+async function candidatePublicKeys() {
+  const keys = [];
   const cached = await db.get('settings', 'license_public_key');
-  if (cached && cached.publicKey) return cached.publicKey;
+  if (cached && cached.publicKey) keys.push(cached.publicKey);
   const embedded = embeddedPublicKey();
-  if (embedded) return embedded;
-  return null;
+  if (embedded && !keys.includes(embedded)) keys.push(embedded);
+  return keys;
+}
+
+async function resolvePublicKey() {
+  const keys = await candidatePublicKeys();
+  return keys[0] || null;
 }
 
 /**
@@ -94,7 +105,20 @@ export async function checkLicense() {
   }
 
   // 1. Verify cryptographic signature (anti-tamper of expiry date / status).
-  const ok = await verifySignedPayload(license.payload, license.signature, publicKey);
+  // Try every candidate key (cached + embedded) so a vendor key rotation never
+  // permanently locks the device out.
+  const keys = await candidatePublicKeys();
+  if (keys.length === 0) {
+    return { state: LICENSE_STATES.CORRUPTED, license, reason: 'NO_PUBLIC_KEY' };
+  }
+  let ok = false;
+  for (const k of keys) {
+    // eslint-disable-next-line no-await-in-loop
+    if (await verifySignedPayload(license.payload, license.signature, k)) {
+      ok = true;
+      break;
+    }
+  }
   if (!ok) return { state: LICENSE_STATES.INVALID_SIGNATURE, license, reason: 'INVALID_SIGNATURE' };
 
   const payload = license.payload;

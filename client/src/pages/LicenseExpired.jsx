@@ -5,7 +5,7 @@ import { fmtDate, money } from '../utils/format';
 import { Button } from '../components/ui';
 
 export default function LicenseExpired({ state, license, onRenewed }) {
-  const [renewalCode, setRenewalCode] = useState('');
+  const [renewalCode, setRenewalCode] = useState(license?.payload?.licenseId || '');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
