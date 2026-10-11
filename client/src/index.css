@@ -292,8 +292,9 @@ a { color: var(--primary); text-decoration: none; }
 
 /* ============================ RESPONSIVE / MOBILE ============================
    The same POS codebase runs on phones/tablets (PWA installable). Layout,
-   tables and forms adapt below 900px / 600px. */
-@media (max-width: 900px) {
+   tables and forms adapt below 768px / 560px. The sidebar collapses into the
+   ☰ hamburger ONLY on genuinely narrow screens (phones/tablets). */
+@media (max-width: 768px) {
   .menu-btn { display: inline-flex; align-items: center; justify-content: center; }
   .sidebar {
     transform: translateX(-100%);
