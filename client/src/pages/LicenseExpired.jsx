@@ -14,7 +14,7 @@ export default function LicenseExpired({ state, license, onRenewed }) {
   const titles = {
     EXPIRED: 'Your software license has expired. Please renew your license.',
     SUSPENDED: 'Your license has been suspended. Contact your vendor.',
-    INVALID_SIGNATURE: 'License verification failed. Please contact support.',
+    INVALID_SIGNATURE: 'License verification failed. Please re-activate with your License ID.',
     DEVICE_NOT_BOUND: 'This device is not authorized for this license.',
     CORRUPTED: 'License data is corrupted. Please re-activate.',
   };
@@ -25,7 +25,12 @@ export default function LicenseExpired({ state, license, onRenewed }) {
     setError('');
     try {
       const deviceId = await getDeviceId();
-      const res = await api.post('/license/validate', { licenseId: renewalCode.trim().toUpperCase(), deviceId });
+      const res = await api.post('/license/activate', {
+        licenseId: renewalCode.trim().toUpperCase(),
+        deviceId,
+        deviceName: 'Main POS Terminal',
+        platform: navigator.userAgent,
+      });
       const d = res.data.data;
       await saveLicense({ payload: d.license, signature: d.signature, boundDeviceId: d.deviceId || deviceId, publicKey: null });
       await saveValidationState({ valid: true, serverTime: d.serverTime });
@@ -53,7 +58,7 @@ export default function LicenseExpired({ state, license, onRenewed }) {
           </div>
         )}
 
-        <p className="muted small mb-16">If you have renewed your license, enter the License ID below to refresh it.</p>
+        <p className="muted small mb-16">Enter your License ID below to re-activate this device.</p>
         <form onSubmit={renew}>
           <div className="field">
             <label>License ID</label>
@@ -61,7 +66,7 @@ export default function LicenseExpired({ state, license, onRenewed }) {
           </div>
           {error && <div className="badge badge-danger mb-16">{error}</div>}
           <Button type="submit" className="btn-block" disabled={loading || !renewalCode}>
-            {loading ? 'Checking...' : 'Validate Renewal'}
+            {loading ? 'Activating...' : 'Re-activate License'}
           </Button>
         </form>
         <button className="btn btn-ghost btn-block mt-16" onClick={onRenewed}>Try Again</button>

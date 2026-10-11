@@ -1,9 +1,9 @@
 {
   "name": "pos-billing-desktop",
   "version": "1.0.0",
-  "description": "POS Billing Suite - Windows desktop app (Electron)",
+  "description": "NiteshPro POS - Windows desktop app (Electron)",
   "main": "main.js",
-  "author": "POS Billing Suite",
+  "author": "NiteshPro POS",
   "license": "UNLICENSED",
   "scripts": {
     "start": "electron .",
@@ -14,7 +14,7 @@
   },
   "build": {
     "appId": "com.pos.billing",
-    "productName": "POS Billing Suite",
+    "productName": "NiteshPro POS",
     "directories": {
       "output": "dist",
       "buildResources": "build"
@@ -51,7 +51,7 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "shortcutName": "POS Billing Suite"
+      "shortcutName": "NiteshPro POS"
     }
   },
   "devDependencies": {

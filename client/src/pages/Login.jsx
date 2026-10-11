@@ -48,7 +48,7 @@ export default function Login() {
   return (
     <div className="login-page">
       <div className="login-card">
-        <h1>🛒 POS Billing Suite</h1>
+        <h1>🛒 NiteshPro POS</h1>
         <div className="sub">{mode === 'password' ? 'Sign in to your account' : 'Enter your quick login PIN'}</div>
 
         <div className="login-tabs">

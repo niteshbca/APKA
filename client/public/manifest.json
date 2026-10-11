@@ -1,7 +1,7 @@
 {
-  "name": "POS Billing Suite",
-  "short_name": "POS",
-  "description": "Professional Point of Sale billing with full offline support and automatic sync",
+  "name": "NiteshPro POS",
+  "short_name": "NiteshPro",
+  "description": "NiteshPro POS - Professional Point of Sale billing with full offline support and automatic sync",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

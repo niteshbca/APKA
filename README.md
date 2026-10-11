@@ -1,4 +1,4 @@
-# POS Billing Suite — Professional Point of Sale (MERN)
+# NiteshPro POS — Professional Point of Sale (MERN)
 
 A complete, production-ready **POS Billing Software** built with the **MERN stack** (MongoDB, Express, React, Node.js) that works **both ONLINE and OFFLINE** with automatic synchronization, JWT authentication, invoice printing (A4 + thermal), a secure **signed-license** system with device binding and anti-bypass protection, and **PWA / mobile / desktop / website** support from a single codebase.
 
@@ -339,7 +339,7 @@ The POS can be packaged as a **Windows desktop application** (`.exe` installer) 
 **Prerequisite:** an internet connection for the first run (MongoDB Atlas is the database — no local MongoDB installation required).
 
 ```bash
-# Build the Windows installer (outputs desktop/dist/POS Billing Suite Setup 1.0.0.exe)
+# Build the Windows installer (outputs desktop/dist/NiteshPro POS Setup 1.0.0.exe)
 npm run desktop:dist
 
 # Run the desktop app in development mode (opens the Electron window)

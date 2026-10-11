@@ -2,7 +2,7 @@
   "name": "pos-server",
   "version": "1.0.0",
   "private": true,
-  "description": "POS Billing backend - Express + MongoDB + JWT + License system",
+  "description": "NiteshPro POS backend - Express + MongoDB + JWT + multi-branch + License system",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",

@@ -80,7 +80,7 @@ export default function Layout({ children }) {
   return (
     <div className="app-shell">
       <aside className={`sidebar ${menuOpen ? 'open' : ''}`}>
-        <div className="brand">🛒 POS Suite</div>
+        <div className="brand">🛒 NiteshPro POS</div>
         <nav>
           {items.map((n) => (
             <NavLink

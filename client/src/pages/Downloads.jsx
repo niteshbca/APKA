@@ -29,7 +29,7 @@ export default function Downloads() {
   return (
     <div className="login-page">
       <div className="downloads-wrap">
-        <h1>🛒 POS Billing Suite</h1>
+        <h1>🛒 NiteshPro POS</h1>
         <div className="sub" style={{ marginBottom: 20 }}>
           Download the app — works fully offline, syncs automatically when online.
         </div>

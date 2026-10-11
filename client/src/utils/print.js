@@ -123,7 +123,7 @@ function buildThermal(settings, invoice) {
   ${invoice.changeDue ? `<div class="tt"><span>Change</span><span>${money(invoice.changeDue)}</span></div>` : ''}
   <div class="line"></div>
   <div class="center">${esc(settings.footerNote || 'Thank you!')}</div>
-  <div class="center">Powerered by POS Billing Suite</div>
+  <div class="center">Powered by NiteshPro POS</div>
   <script>window.onload = function(){ window.print(); }</script>
   </body></html>`;
 }

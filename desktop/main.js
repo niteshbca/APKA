@@ -53,7 +53,7 @@ function createWindow() {
     height: 900,
     minWidth: 1024,
     minHeight: 640,
-    title: 'POS Billing Suite',
+    title: 'NiteshPro POS',
     autoHideMenuBar: true,
     backgroundColor: '#0f172a',
     icon: path.join(__dirname, 'build', 'icon.png'),
