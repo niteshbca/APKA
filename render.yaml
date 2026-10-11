@@ -19,6 +19,10 @@ services:
         value: "10"
       - key: LICENSE_KEYS_DIR
         value: keys
+      - key: LICENSE_PRIVATE_KEY
+        sync: false
+      - key: LICENSE_PUBLIC_KEY
+        sync: false
       - key: CLIENT_ORIGIN
         sync: false
       - key: DEFAULT_LICENSE_ID

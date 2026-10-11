@@ -59,6 +59,26 @@ async function signLicense(license) {
   return { payload, signature: license.signature };
 }
 
+/**
+ * Re-signs every stored license with the CURRENT private key. This keeps
+ * existing licenses valid after the signing key is rotated or when a database
+ * was migrated from an environment with a different key. Idempotent.
+ */
+async function resignAllLicenses() {
+  const licenses = await License.find();
+  let count = 0;
+  for (const license of licenses) {
+    const payload = buildSignedPayload(license);
+    const signature = keyService.signPayload(payload);
+    if (license.signature !== signature) {
+      license.signature = signature;
+      await license.save();
+      count += 1;
+    }
+  }
+  return { total: licenses.length, updated: count };
+}
+
 function verifySignedPayload(payload, signature) {
   return keyService.verifyPayload(payload, signature, keyService.publicKeyPem());
 }
@@ -144,6 +164,10 @@ async function bindDevice(licenseId, deviceId, deviceName, platform) {
     });
   }
 
+  if (keyService.hasPrivateKey()) {
+    const signed = await signLicense(license);
+    return { ok: true, license: signed.payload, signature: signed.signature, serverTime: now, deviceId };
+  }
   const payload = buildSignedPayload(license);
   return { ok: true, license: payload, signature: license.signature, serverTime: now, deviceId };
 }
@@ -154,6 +178,7 @@ module.exports = {
   findLicenseById,
   buildSignedPayload,
   signLicense,
+  resignAllLicenses,
   verifySignedPayload,
   validateOnline,
   bindDevice,

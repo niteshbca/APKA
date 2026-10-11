@@ -26,6 +26,8 @@ const syncRoutes = require('./routes/sync');
 const settingRoutes = require('./routes/settings');
 const cloudSyncRoutes = require('./routes/cloudSync');
 const cloudSyncWorker = require('./services/cloudSyncWorker');
+const keyService = require('./services/keyService');
+const licenseService = require('./services/licenseService');
 
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 
@@ -95,6 +97,23 @@ async function start() {
   } catch (err) {
     console.error('[db] MongoDB unreachable — starting in OFFLINE mode:', err.message);
   }
+
+  // Keep every stored license signature in sync with the current signing key.
+  // Important on hosted deployments where the private key comes from an env var
+  // and the database may contain licenses signed by an older key.
+  if (mongoose.connection && mongoose.connection.readyState === 1) {
+    if (keyService.hasPrivateKey()) {
+      try {
+        const r = await licenseService.resignAllLicenses();
+        console.log(`[license] re-signed licenses: ${r.updated}/${r.total} updated`);
+      } catch (err) {
+        console.error('[license] re-sign failed:', err.message);
+      }
+    } else {
+      console.warn('[license] no private key configured — license activation will use stored signatures only');
+    }
+  }
+
   const port = process.env.PORT || 5000;
   const server = app.listen(port, () => console.log(`POS API server running on http://localhost:${port}`));
   if (cloudSyncWorker.isEnabled()) {
