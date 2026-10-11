@@ -7,19 +7,54 @@ import {
   getAllProducts,
 } from '../db/offlineService';
 import { useBarcodeScanner, looksLikeBarcode } from '../utils/barcode';
-import { computeTotals } from '../utils/gst';
+import { computeTotals, lineTotal } from '../utils/gst';
 import { money } from '../utils/format';
 import { getDeviceId } from '../utils/license';
 import { useToast } from '../context/ToastContext';
 import { useSync } from '../context/SyncContext';
 import { Button, Card, Modal, Field, Badge } from '../components/ui';
-import CartTable from '../components/Billing/CartTable';
 import PaymentModal from '../components/Billing/PaymentModal';
 import InvoicePreview from '../components/Billing/InvoicePreview';
 import { printInvoice } from '../utils/print';
 
+const CATEGORIES = [
+  { id: 'all', name: 'All' },
+  { id: 'beverages', name: 'Beverages' },
+  { id: 'grocery', name: 'Grocery' },
+  { id: 'snacks', name: 'Snacks' },
+  { id: 'dairy', name: 'Dairy' },
+  { id: 'personal-care', name: 'Personal Care' },
+  { id: 'household', name: 'Household' },
+];
+
+function formatCategoryName(cat) {
+  if (!cat) return 'Uncategorized';
+  const map = {
+    beverages: 'Beverages',
+    grocery: 'Grocery',
+    snacks: 'Snacks',
+    dairy: 'Dairy',
+    'personal-care': 'Personal Care',
+    household: 'Household',
+  };
+  return map[cat.toLowerCase()] || cat;
+}
+
+function getPlaceholderImage(category) {
+  const placeholders = {
+    beverages: '🥤',
+    grocery: '🛒',
+    snacks: '🍿',
+    dairy: '🥛',
+    'personal-care': '🧴',
+    household: '🧹',
+  };
+  return placeholders[category?.toLowerCase()] || '📦';
+}
+
 export default function Billing() {
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [query, setQuery] = useState('');
   const [cart, setCart] = useState([]);
   const [discount, setDiscount] = useState('');
@@ -32,10 +67,17 @@ export default function Billing() {
   const [submitting, setSubmitting] = useState(false);
   const [preview, setPreview] = useState(null);
   const [settings, setSettings] = useState({});
+  const [activeCategory, setActiveCategory] = useState('all');
+  const [scanInput, setScanInput] = useState('');
+  const [recentItems, setRecentItems] = useState([]);
+  const [priceCheckMode, setPriceCheckMode] = useState(false);
+  const [priceCheckProduct, setPriceCheckProduct] = useState(null);
   const searchRef = useRef(null);
+  const scanRef = useRef(null);
   const { toast } = useToast();
   const sync = useSync();
   const online = sync.status !== 'OFFLINE';
+  const user = JSON.parse(localStorage.getItem('pos_user') || '{}');
 
   const loadProducts = useCallback(async () => {
     const local = await getAllProducts();
@@ -50,6 +92,15 @@ export default function Billing() {
       setProducts(list);
     } catch {
       setProducts([]);
+    }
+  }, []);
+
+  const loadCategories = useCallback(async () => {
+    try {
+      const res = await api.get('/categories');
+      setCategories(res.data.data);
+    } catch {
+      setCategories([]);
     }
   }, []);
 
@@ -77,28 +128,35 @@ export default function Billing() {
       const s = res.data.data;
       await db.put('settings', { key: 'business_settings', ...s });
       setSettings(s);
-    } catch { /* offline: cached is fine */ }
+    } catch { }
   }, []);
 
   useEffect(() => {
     loadProducts();
+    loadCategories();
     loadCustomers();
     loadSettings();
     const iv = setInterval(loadProducts, 60000);
     return () => clearInterval(iv);
-  }, [loadProducts, loadCustomers, loadSettings]);
+  }, [loadProducts, loadCategories, loadCustomers, loadSettings]);
 
   const filtered = useMemo(() => {
+    let result = products.filter(p => p.active !== false);
+    if (activeCategory !== 'all') {
+      const catName = formatCategoryName(activeCategory).toLowerCase();
+      result = result.filter(p => (p.categoryName || '').toLowerCase() === catName);
+    }
     const q = query.trim().toLowerCase();
-    if (!q) return products.slice(0, 40);
-    return products.filter(
-      (p) =>
-        p.active !== false &&
-        (String(p.name || '').toLowerCase().includes(q) ||
+    if (q) {
+      result = result.filter(
+        (p) =>
+          String(p.name || '').toLowerCase().includes(q) ||
           String(p.sku || '').toLowerCase().includes(q) ||
-          String(p.barcode || '').toLowerCase().includes(q))
-    ).slice(0, 40);
-  }, [products, query]);
+          String(p.barcode || '').toLowerCase().includes(q)
+      );
+    }
+    return result.slice(0, 60);
+  }, [products, query, activeCategory]);
 
   const handleScan = useCallback(
     (code) => {
@@ -107,6 +165,7 @@ export default function Billing() {
         if (found) {
           addToCart(found);
           toast(`Scanned: ${found.name}`, 'info');
+          setScanInput('');
         } else {
           toast(`No product for barcode: ${code}`, 'error');
         }
@@ -117,6 +176,14 @@ export default function Billing() {
 
   useBarcodeScanner(handleScan, { timeout: 60 });
 
+  const handleScanInput = (e) => {
+    const value = e.target.value;
+    setScanInput(value);
+    if (value.length >= 8 && (value.includes('\n') || value.includes('\r') || looksLikeBarcode(value))) {
+      handleScan(value.replace(/[\n\r]/g, ''));
+    }
+  };
+
   const addToCart = (p) => {
     setCart((c) => {
       const idx = c.findIndex((x) => x.sku === p.sku);
@@ -125,21 +192,32 @@ export default function Billing() {
         copy[idx] = { ...copy[idx], qty: copy[idx].qty + 1 };
         return copy;
       }
-      return [
-        ...c,
-        {
-          product: p._id,
-          sku: p.sku,
-          name: p.name,
-          barcode: p.barcode,
-          price: p.sellingPrice,
-          gstRate: p.gstRate || 0,
-          purchasePrice: p.purchasePrice || 0,
-          qty: 1,
-          lineDiscount: 0,
-        },
-      ];
+      const newItem = {
+        product: p._id,
+        sku: p.sku,
+        name: p.name,
+        barcode: p.barcode,
+        price: p.sellingPrice,
+        gstRate: p.gstRate || 0,
+        purchasePrice: p.purchasePrice || 0,
+        categoryName: p.categoryName,
+        image: p.image,
+        qty: 1,
+        lineDiscount: 0,
+      };
+      setRecentItems((prev) => {
+        const filtered = prev.filter((r) => r.sku !== p.sku);
+        return [newItem, ...filtered].slice(0, 5);
+      });
+      return [...c, newItem];
     });
+    setQuery('');
+    searchRef.current?.focus();
+  };
+
+  const addRecentItem = (item) => {
+    const p = products.find((prod) => prod.sku === item.sku);
+    if (p) addToCart(p);
   };
 
   const inc = (i) => setCart((c) => c.map((x, idx) => (idx === i ? { ...x, qty: x.qty + 1 } : x)));
@@ -209,7 +287,7 @@ export default function Billing() {
     }
     setSubmitting(true);
     const deviceId = await getDeviceId();
-    const cashierName = JSON.parse(localStorage.getItem('pos_user') || '{}').name || 'cashier';
+    const cashierName = user.name || 'cashier';
 
     const base = {
       items: cart,
@@ -242,7 +320,6 @@ export default function Billing() {
           clientSaleId: `server-${result.saleId}`,
           ...invoiceRecord,
         });
-        // Update local stock for the just-sold items.
         for (const it of cart) {
           const local = await db.get('products', it.sku);
           if (local) {
@@ -277,7 +354,6 @@ export default function Billing() {
       if (err.code === 'LICENSE_EXPIRED') {
         toast('License expired — billing blocked', 'error');
       } else {
-        // Fall back to offline storage so billing never stops.
         try {
           const result = await saveSaleOffline({
             items: cart,
@@ -315,7 +391,30 @@ export default function Billing() {
     searchRef.current?.focus();
   };
 
-  // Keyboard shortcuts: F2 search, F9 payment, F4 new bill, Enter adds first result when search focused
+  const holdBill = () => {
+    if (cart.length === 0) {
+      toast('Cart is empty', 'error');
+      return;
+    }
+    toast('Bill held (feature coming soon)', 'info');
+  };
+
+  const parkBill = () => {
+    if (cart.length === 0) {
+      toast('Cart is empty', 'error');
+      return;
+    }
+    toast('Bill parked (feature coming soon)', 'info');
+  };
+
+  const printBill = () => {
+    if (cart.length === 0) {
+      toast('Cart is empty', 'error');
+      return;
+    }
+    toast('Print preview (feature coming soon)', 'info');
+  };
+
   useEffect(() => {
     const handler = (e) => {
       if (e.key === 'F2') {
@@ -327,127 +426,258 @@ export default function Billing() {
       } else if (e.key === 'F4') {
         e.preventDefault();
         newBill();
+      } else if (e.key === 'F7') {
+        e.preventDefault();
+        holdBill();
+      } else if (e.key === 'F8') {
+        e.preventDefault();
+        parkBill();
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [cart.length]);
 
-  return (
-    <div>
-      <div className="flex-between mb-16">
-        <h2>Billing Screen</h2>
-        <div className="flex gap-8">
-          <span className="kbd">F2 Search</span>
-          <span className="kbd">F9 Pay</span>
-          <span className="kbd">F4 New</span>
-          {!online && <Badge tone="warning">Offline mode — sales saved locally</Badge>}
-        </div>
-      </div>
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  const outletName = settings.outletName || 'Main Outlet';
 
-      <div className="billing-layout">
-        {/* LEFT: product picker */}
-        <Card title="Search Products" action={<Badge tone="info">{products.length} products</Badge>}>
-          <div className="search-box">
+  return (
+    <div className="pos-layout">
+      {/* TOP BAR */}
+      <header className="pos-topbar">
+        <div className="topbar-left">
+          <span className="pos-logo">NiteshPro POS</span>
+        </div>
+        <div className="topbar-center">
+          <div className="search-box-large">
             <input
               ref={searchRef}
-              className="input"
-              placeholder="Search by name, SKU, or scan barcode…"
+              className="search-input"
+              placeholder="Search product by name, SKU, or barcode..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               autoFocus
             />
-            <span className="icon">🔍</span>
+            <span className="search-icon">🔍</span>
           </div>
-          {query && (
-            <div className="barcode-input small muted mt-8">
-              Scans detected automatically — or press Enter to add first result.
-            </div>
-          )}
-          <div style={{ maxHeight: 460, overflowY: 'auto', marginTop: 12 }}>
-            {filtered.length === 0 && <div className="muted small">No products found</div>}
-            {filtered.map((p) => (
-              <div
-                key={p.sku}
-                onClick={() => addToCart(p)}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '10px 12px',
-                  borderRadius: 8,
-                  border: '1px solid var(--border)',
-                  marginBottom: 6,
-                  cursor: 'pointer',
-                  background: '#fff',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--primary)')}
-                onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
-              >
-                <div>
-                  <div style={{ fontWeight: 600 }}>{p.name}</div>
-                  <div className="muted small">SKU: {p.sku} {p.barcode ? `· Barcode: ${p.barcode}` : ''}</div>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontWeight: 700 }}>{money(p.sellingPrice)}</div>
-                  <div className="small" style={{ color: p.isLowStock ? 'var(--danger)' : 'var(--text-muted)' }}>
-                    Stock: {p.stock}
-                  </div>
-                </div>
-              </div>
-            ))}
+        </div>
+        <div className="topbar-right">
+          <Button variant="ghost" size="sm" onClick={holdBill} title="F7 - Hold Bill">
+            ⏸ Hold
+          </Button>
+          <Button variant="ghost" size="sm" onClick={parkBill} title="F8 - Park Bill">
+            🅿 Park
+          </Button>
+          <Button variant="ghost" size="sm" onClick={printBill} title="Print">
+            🖨 Print
+          </Button>
+          <div className="user-profile">
+            <span className="user-role">{user.role || 'Cashier'}</span>
+            <span className="user-name">{user.name || 'Admin'}</span>
+            <div className="user-avatar">👤</div>
           </div>
-        </Card>
+        </div>
+      </header>
 
-        {/* RIGHT: cart + totals */}
-        <div>
-          <Card title="Current Bill">
-            <div className="flex gap-8" style={{ marginBottom: 12 }}>
-              <Button variant="ghost" size="sm" onClick={() => setShowCustomerModal(true)}>
-                {customer ? `Customer: ${customer.name}` : '＋ Select / Add Customer'}
-              </Button>
-              <Button variant="ghost" size="sm" onClick={newBill}>🗑 New Bill</Button>
+      {/* MAIN CONTENT AREA */}
+      <div className="pos-main">
+        {/* LEFT: CART / BILLING AREA */}
+        <aside className="pos-left">
+          <div className="billing-card">
+            <div className="billing-header">
+              <h3>Walk-in Customer</h3>
+              {customer && (
+                <div className="customer-info">
+                  <span className="customer-name">{customer.name}</span>
+                  {customer.mobile && <span className="customer-mobile">{customer.mobile}</span>}
+                  <button className="btn-remove-customer" onClick={() => setCustomer(null)}>✕</button>
+                </div>
+              )}
+              {!customer && (
+                <Button variant="ghost" size="sm" onClick={() => setShowCustomerModal(true)} className="select-customer-btn">
+                  + Select / Add Customer
+                </Button>
+              )}
             </div>
 
-            {customer && (
-              <div className="flex-between small mb-16" style={{ background: 'var(--primary-light)', padding: '8px 12px', borderRadius: 8 }}>
-                <span><b>{customer.name}</b> {customer.mobile && `· ${customer.mobile}`}</span>
-                <button className="btn btn-ghost btn-sm" onClick={() => setCustomer(null)}>✕</button>
+            <div className="cart-items">
+              {cart.length === 0 ? (
+                <div className="empty-cart">
+                  <div className="empty-icon">🛒</div>
+                  <div className="empty-text">Cart is empty</div>
+                  <div className="empty-sub">Search products or scan barcode to add items</div>
+                </div>
+              ) : (
+                <table className="cart-table">
+                  <thead>
+                    <tr>
+                      <th>Item</th>
+                      <th style={{ width: 80 }}>Price</th>
+                      <th style={{ width: 80 }}>Qty</th>
+                      <th style={{ width: 80 }}>Total</th>
+                      <th style={{ width: 40 }}></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cart.map((it, i) => (
+                      <tr key={`${it.sku}-${i}`}>
+                        <td>
+                          <div className="cart-item-name">{it.name}</div>
+                          <div className="cart-item-sku">{it.sku}</div>
+                        </td>
+                        <td>{money(it.price)}</td>
+                        <td>
+                          <div className="qty-control">
+                            <button onClick={() => dec(i)}>-</button>
+                            <span>{it.qty}</span>
+                            <button onClick={() => inc(i)}>+</button>
+                          </div>
+                        </td>
+                        <td className="cart-item-total">{money(lineTotal(it))}</td>
+                        <td>
+                          <button className="btn-remove" onClick={() => remove(i)}>✕</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            <div className="billing-totals">
+              <div className="totals-row">
+                <span>Subtotal</span>
+                <span>{money(totals.subtotal)}</span>
               </div>
-            )}
-
-            <CartTable items={cart} onInc={inc} onDec={dec} onRemove={remove} onSetLineDiscount={setLineDiscount} />
-
-            <div className="mt-16" style={{ width: 260, marginLeft: 'auto' }}>
-              <div className="flex-between small"><span className="muted">Subtotal</span><span>{money(totals.subtotal)}</span></div>
-              <div className="flex-between small mt-8">
-                <span className="muted">Discount (₹)</span>
+              <div className="totals-row">
+                <span>Discount (₹)</span>
                 <input
                   type="number"
                   min="0"
-                  style={{ width: 100, padding: '4px 8px', borderRadius: 6, border: '1px solid var(--border)' }}
+                  className="discount-input"
                   value={discount}
                   onChange={(e) => setDiscount(e.target.value)}
                 />
               </div>
-              <div className="flex-between small mt-8"><span className="muted">Taxable</span><span>{money(totals.taxable)}</span></div>
-              <div className="flex-between small mt-8"><span className="muted">GST ({Object.keys(totals.gstBuckets).join(', ')}%)</span><span>{money(totals.gstTotal)}</span></div>
-              <div className="flex-between mt-8" style={{ fontWeight: 800, fontSize: 20, borderTop: '2px solid var(--text)', paddingTop: 8 }}>
-                <span>Grand Total</span><span>{money(totals.total)}</span>
+              <div className="totals-row">
+                <span>Taxable</span>
+                <span>{money(totals.taxable)}</span>
+              </div>
+              <div className="totals-row">
+                <span>GST</span>
+                <span>{money(totals.gstTotal)}</span>
+              </div>
+              <div className="totals-row grand-total">
+                <span>Grand Total</span>
+                <span>{money(totals.total)}</span>
+              </div>
+              <div className="totals-row paid-row">
+                <span>Paid Amount</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  className="paid-input"
+                  placeholder="0.00"
+                />
+              </div>
+              <div className="totals-row change-row">
+                <span>Change</span>
+                <span className="change-amount">₹0.00</span>
               </div>
             </div>
 
             <Button
-              className="btn-block mt-16"
-              style={{ padding: 14, fontSize: 16 }}
+              className="pay-button btn-block"
               disabled={cart.length === 0}
               onClick={() => setShowPayment(true)}
             >
-              💳 Charge {money(totals.total)} — Press F9
+              💳 Pay & Print (F9) — {money(totals.total)}
             </Button>
-          </Card>
-        </div>
+          </div>
+        </aside>
+
+        {/* RIGHT: PRODUCTS GALLERY */}
+        <main className="pos-right">
+          <div className="products-card">
+            <div className="category-tabs">
+              {CATEGORIES.map((cat) => (
+                <button
+                  key={cat.id}
+                  className={`cat-tab ${activeCategory === cat.id ? 'active' : ''}`}
+                  onClick={() => { setActiveCategory(cat.id); setQuery(''); }}
+                >
+                  {cat.name}
+                </button>
+              ))}
+            </div>
+            <div className="products-grid">
+              {filtered.length === 0 ? (
+                <div className="no-products">No products in this category</div>
+              ) : (
+                filtered.map((p) => (
+                  <div
+                    key={p.sku}
+                    className="product-card"
+                    onClick={() => addToCart(p)}
+                    style={{ borderLeftColor: p.isLowStock ? 'var(--danger)' : 'transparent' }}
+                  >
+                    <div className="product-image">
+                      {p.image ? (
+                        <img src={p.image} alt={p.name} onError={(e) => e.currentTarget.style.display = 'none'} />
+                      ) : (
+                        <span className="placeholder">{getPlaceholderImage(p.categoryName)}</span>
+                      )}
+                    </div>
+                    <div className="product-info">
+                      <div className="product-name">{p.name}</div>
+                      <div className="product-price">{money(p.sellingPrice)}</div>
+                      <div className="product-barcode">{p.barcode || `SKU: ${p.sku}`}</div>
+                      <div className="product-stock" style={{ color: p.isLowStock ? 'var(--danger)' : 'var(--text-muted)' }}>
+                        Stock: {p.stock}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </main>
       </div>
+
+      {/* BOTTOM BAR */}
+      <footer className="pos-bottombar">
+        <div className="bottombar-left">
+          <div className="scan-box">
+            <label>Scan Barcode</label>
+            <input
+              ref={scanRef}
+              type="text"
+              className="scan-input"
+              placeholder="Scan or type barcode..."
+              value={scanInput}
+              onChange={handleScanInput}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleScan(scanInput); }}
+            />
+          </div>
+        </div>
+        <div className="bottombar-center">
+          <Button variant="ghost" size="sm" onClick={() => setPriceCheckMode(!priceCheckMode)}>
+            {priceCheckMode ? '✕ Exit Price Check' : '🔍 Price Check'}
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => { /* recent items */ }}>
+            🕐 Recent Items
+          </Button>
+        </div>
+        <div className="bottombar-right">
+          <div className="footer-info">
+            <div>{dateStr} | {timeStr}</div>
+            <div className="outlet-name">{outletName}</div>
+          </div>
+        </div>
+      </footer>
 
       {/* Customer selection modal */}
       <Modal open={showCustomerModal} title="Select or Add Customer" onClose={() => setShowCustomerModal(false)}>
@@ -458,11 +688,7 @@ export default function Billing() {
           {customerOptions.map((c) => (
             <div
               key={c.id}
-              onClick={() => {
-                setCustomer(c);
-                setShowCustomerModal(false);
-                setCustomerSearch('');
-              }}
+              onClick={() => { setCustomer(c); setShowCustomerModal(false); setCustomerSearch(''); }}
               style={{ padding: '8px 10px', borderRadius: 6, cursor: 'pointer' }}
               onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg)')}
               onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
@@ -474,22 +700,33 @@ export default function Billing() {
         </div>
         <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12 }}>
           <div className="form-row-3">
-            <Field label="Name *">
-              <input className="input" value={newCustomer.name} onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })} />
-            </Field>
-            <Field label="Mobile">
-              <input className="input" value={newCustomer.mobile} onChange={(e) => setNewCustomer({ ...newCustomer, mobile: e.target.value })} />
-            </Field>
-            <Field label="GST Number">
-              <input className="input" value={newCustomer.gstNumber} onChange={(e) => setNewCustomer({ ...newCustomer, gstNumber: e.target.value })} />
-            </Field>
+            <Field label="Name *"><input className="input" value={newCustomer.name} onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })} /></Field>
+            <Field label="Mobile"><input className="input" value={newCustomer.mobile} onChange={(e) => setNewCustomer({ ...newCustomer, mobile: e.target.value })} /></Field>
+            <Field label="GST Number"><input className="input" value={newCustomer.gstNumber} onChange={(e) => setNewCustomer({ ...newCustomer, gstNumber: e.target.value })} /></Field>
           </div>
-          <Field label="Address">
-            <input className="input" value={newCustomer.address} onChange={(e) => setNewCustomer({ ...newCustomer, address: e.target.value })} />
-          </Field>
+          <Field label="Address"><input className="input" value={newCustomer.address} onChange={(e) => setNewCustomer({ ...newCustomer, address: e.target.value })} /></Field>
           <Button className="btn-block" onClick={saveCustomer}>Save Customer</Button>
         </div>
       </Modal>
+
+      {/* Price Check Modal */}
+      {priceCheckMode && priceCheckProduct && (
+        <Modal open={true} title="Price Check" onClose={() => { setPriceCheckMode(false); setPriceCheckProduct(null); }}>
+          <div style={{ textAlign: 'center', padding: 20 }}>
+            <div className="product-image" style={{ width: 120, height: 120, margin: '0 auto 16px' }}>
+              {priceCheckProduct.image ? (
+                <img src={priceCheckProduct.image} alt={priceCheckProduct.name} />
+              ) : (
+                <span className="placeholder" style={{ fontSize: 48 }}>{getPlaceholderImage(priceCheckProduct.categoryName)}</span>
+              )}
+            </div>
+            <h3 style={{ marginBottom: 8 }}>{priceCheckProduct.name}</h3>
+            <div className="muted small mb-8">{priceCheckProduct.barcode || `SKU: ${priceCheckProduct.sku}`}</div>
+            <div style={{ fontSize: 32, fontWeight: 800, color: 'var(--primary)' }}>{money(priceCheckProduct.sellingPrice)}</div>
+            <div className="muted small mt-8">GST: {priceCheckProduct.gstRate}% | Stock: {priceCheckProduct.stock}</div>
+          </div>
+        </Modal>
+      )}
 
       <PaymentModal
         open={showPayment}

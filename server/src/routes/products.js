@@ -51,7 +51,7 @@ router.get('/:id', async (req, res, next) => {
 
 router.post('/', requireRoles('superadmin', 'admin'), async (req, res, next) => {
   try {
-    const { name, sku, barcode, category, purchasePrice, sellingPrice, gstRate, stock, minStock } = req.body;
+    const { name, sku, barcode, category, purchasePrice, sellingPrice, gstRate, stock, minStock, image } = req.body;
     if (!name || !sku) return res.status(400).json({ success: false, message: 'name and sku are required' });
     if (await Product.findOne({ sku })) return res.status(409).json({ success: false, message: 'SKU already exists' });
     if (barcode && (await Product.findOne({ barcode }))) return res.status(409).json({ success: false, message: 'Barcode already exists' });
@@ -67,6 +67,7 @@ router.post('/', requireRoles('superadmin', 'admin'), async (req, res, next) => 
       sku,
       barcode: barcode || undefined,
       category: category || null,
+      image: image || undefined,
       purchasePrice: purchasePrice || 0,
       sellingPrice: sellingPrice ?? 0,
       gstRate: gstRate || 0,
@@ -92,7 +93,7 @@ router.put('/:id', requireRoles('superadmin', 'admin'), async (req, res, next) =
       const dupB = await Product.findOne({ barcode: req.body.barcode, _id: { $ne: product._id } });
       if (dupB) return res.status(409).json({ success: false, message: 'Barcode already exists' });
     }
-    const fields = ['name', 'sku', 'barcode', 'category', 'purchasePrice', 'sellingPrice', 'gstRate', 'stock', 'minStock', 'active'];
+    const fields = ['name', 'sku', 'barcode', 'category', 'purchasePrice', 'sellingPrice', 'gstRate', 'stock', 'minStock', 'active', 'image'];
     for (const f of fields) {
       if (req.body[f] !== undefined) product[f] = req.body[f];
     }
