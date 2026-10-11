@@ -53,6 +53,7 @@ function buildVars({ sale, invoice, branch, businessSettings, customer }) {
     date: new Date(createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
     customerName: custName,
     customerMobile: doc.customerMobile || (sale && sale.customerSnapshot && sale.customerSnapshot.mobile) || customer?.mobile || '',
+    customerEmail: doc.customerEmail || (sale && sale.customerSnapshot && sale.customerSnapshot.email) || customer?.email || '',
     total: inr(total),
     subtotal: inr(doc.subtotal || (sale && sale.subtotal) || 0),
     gstTotal: inr(doc.gstTotal || (sale && sale.gstTotal) || 0),
@@ -342,6 +343,55 @@ async function dispatchSaleNotifications({ sale, invoice, branchId, customer }) 
   }
 }
 
+/**
+ * Sends an invoice to the customer ON DEMAND (e.g. the "Send Email / Send
+ * WhatsApp" buttons on the billing screen), ignoring the autoSend toggle but
+ * still using the branch's configured SMTP / WhatsApp credentials.
+ * Returns per-channel results. Never throws.
+ */
+async function sendInvoiceNow(branchId, { channel = 'both', email, phone, invoice, sale }) {
+  const results = { email: null, whatsapp: null };
+  try {
+    if (!branchId) return { results, error: 'Branch is required' };
+    const settings = await NotificationSetting.findOne({ branch: branchId });
+    if (!settings) return { results, error: 'Is branch ke liye Notification settings save nahi hain' };
+
+    const [branch, businessSettings] = await Promise.all([
+      Branch.findById(branchId).lean(),
+      Setting.findOne({ key: 'business' }).lean(),
+    ]);
+    const vars = buildVars({ sale, invoice, branch, businessSettings, customer: null });
+    const emailSubject = renderTemplate(settings.template.emailSubject, vars);
+    const emailBody = renderTemplate(settings.template.emailBody, vars);
+    const waBody = renderTemplate(settings.template.whatsappBody, vars);
+
+    const raw = settings.toObject();
+    const forced = {
+      ...raw,
+      email: { ...raw.email, enabled: true },
+      whatsapp: { ...raw.whatsapp, enabled: true },
+    };
+
+    if (channel === 'email' || channel === 'both') {
+      const to = email || vars.customerEmail || '';
+      const r = await sendEmail(forced, { to, subject: emailSubject, bodyText: emailBody, vars });
+      results.email = { ...r, to };
+      await log({ branch: branchId, invoiceNo: vars.invoiceNo, channel: 'email', to, subject: emailSubject, message: emailBody, provider: 'smtp', status: r.status, error: r.error || r.reason, meta: { manual: true } });
+    }
+
+    if (channel === 'whatsapp' || channel === 'both') {
+      const to = phone || vars.customerMobile || '';
+      const r = await sendWhatsapp(forced, { to, message: waBody });
+      results.whatsapp = { ...r, to: normalizePhone(to) };
+      await log({ branch: branchId, invoiceNo: vars.invoiceNo, channel: 'whatsapp', to: normalizePhone(to), message: waBody, provider: raw.whatsapp.provider, status: r.status, error: r.error || r.reason, meta: { ...(r.meta || {}), manual: true } });
+    }
+
+    return { results };
+  } catch (err) {
+    return { results, error: err.message };
+  }
+}
+
 async function testEmail(branchId, to) {
   const settings = await ensureSettings(branchId);
   const email = settings.email || {};
@@ -368,6 +418,7 @@ module.exports = {
   getSettings,
   ensureSettings,
   updateSettings,
+  sendInvoiceNow,
   testEmail,
   testWhatsapp,
   sendWhatsapp,

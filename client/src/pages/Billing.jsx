@@ -68,6 +68,7 @@ export default function Billing() {
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [newCustomer, setNewCustomer] = useState({ name: '', mobile: '', email: '', gstNumber: '', address: '' });
   const [showNotify, setShowNotify] = useState(null);
+  const [notifySending, setNotifySending] = useState('');
   const [showPayment, setShowPayment] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [preview, setPreview] = useState(null);
@@ -407,6 +408,35 @@ export default function Billing() {
       }
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const sendNow = async (channel) => {
+    if (!showNotify) return;
+    const { invoice, customer } = showNotify;
+    const email = customer?.email || invoice.customerEmail || '';
+    const phone = customer?.mobile || invoice.customerMobile || '';
+    if (channel !== 'whatsapp' && !email) return toast('Customer ka email add karo', 'error');
+    if (channel !== 'email' && !phone) return toast('Customer ka mobile number add karo', 'error');
+    setNotifySending(channel);
+    try {
+      const res = await api.post('/notifications/send', {
+        branch: activeBranch?._id,
+        channel,
+        email,
+        phone,
+        invoice,
+      });
+      const r = res.data?.data?.results || {};
+      const parts = [];
+      if (r.email) parts.push(r.email.status === 'sent' ? '✉️ Email bhej diya' : `✉️ Email nahi gayi: ${r.email.error || r.email.reason || 'unknown'}`);
+      if (r.whatsapp) parts.push(r.whatsapp.status === 'sent' ? '💬 WhatsApp bhej diya' : `💬 WhatsApp nahi gaya: ${r.whatsapp.error || r.whatsapp.reason || 'unknown'}`);
+      if (res.data?.data?.error && !parts.length) parts.push(res.data.data.error);
+      toast(parts.join(' · ') || res.data?.message || 'Done', res.data?.success ? 'success' : 'error');
+    } catch (err) {
+      toast(`Send failed: ${err.message}`, 'error');
+    } finally {
+      setNotifySending('');
     }
   };
 
@@ -828,23 +858,42 @@ export default function Billing() {
         const phone = customer?.mobile || invoice.customerMobile || '';
         const email = customer?.email || invoice.customerEmail || '';
         const msg = saleMessage(invoice, businessName);
+        const busy = !!notifySending;
         return (
           <Modal open onClose={() => setShowNotify(null)} title="Notify Customer" width={480}>
             <p className="muted small mb-8">
-              Invoice <b>{invoice.invoiceNo}</b> saved{invoice.synced === false ? ' (offline — will sync)' : ''}. Auto email/WhatsApp are sent after sync if configured in <b>Notifications</b>.
+              Invoice <b>{invoice.invoiceNo}</b> saved{invoice.synced === false ? ' (offline — will sync)' : ''}. Neeche button dabao —
+              system is branch ki email/WhatsApp settings se <b>turant bhej dega</b>.
             </p>
             <div style={{ display: 'grid', gap: 8, marginBottom: 12 }}>
-              {phone ? (
-                <a className="btn btn-block" href={waLink(phone, msg)} target="_blank" rel="noreferrer">💬 Send WhatsApp</a>
-              ) : (
-                <span className="muted small">No customer mobile — add a customer on the next bill for WhatsApp.</span>
-              )}
               {email ? (
-                <a className="btn btn-secondary btn-block" href={mailtoLink(email, saleEmailSubject(invoice, businessName), msg)}>✉️ Send Email</a>
+                <Button className="btn-block" onClick={() => sendNow('email')} disabled={busy}>
+                  {notifySending === 'email' ? 'Bhej rahe hain...' : `✉️ Email bhejo (${email})`}
+                </Button>
               ) : (
-                <span className="muted small">No customer email — add an email on the next bill for the invoice email.</span>
+                <span className="muted small">No customer email — add an email on the bill to send automatically.</span>
+              )}
+              {phone ? (
+                <Button className="btn-block" variant="secondary" onClick={() => sendNow('whatsapp')} disabled={busy}>
+                  {notifySending === 'whatsapp' ? 'Bhej rahe hain...' : `💬 WhatsApp bhejo (${phone})`}
+                </Button>
+              ) : (
+                <span className="muted small">No customer mobile — add a customer on the bill to send WhatsApp.</span>
+              )}
+              {(email || phone) && (
+                <Button className="btn-block" variant="ghost" onClick={() => sendNow('both')} disabled={busy}>
+                  {notifySending === 'both' ? 'Bhej rahe hain...' : '📤 Email + WhatsApp dono bhejo'}
+                </Button>
               )}
             </div>
+            {(email || phone) && (
+              <div className="muted small" style={{ marginBottom: 8 }}>
+                Manual fallback:{' '}
+                {phone && <a href={waLink(phone, msg)} target="_blank" rel="noreferrer">WhatsApp app</a>}
+                {phone && email && ' · '}
+                {email && <a href={mailtoLink(email, saleEmailSubject(invoice, businessName), msg)}>Mail app</a>}
+              </div>
+            )}
             <details className="muted small" style={{ fontSize: 12 }}>
               <summary>Preview message</summary>
               <pre className="code-block" style={{ whiteSpace: 'pre-wrap' }}>{msg}</pre>

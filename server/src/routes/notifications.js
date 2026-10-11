@@ -40,6 +40,28 @@ router.put('/settings', requireRoles('superadmin', 'admin'), async (req, res, ne
   }
 });
 
+/**
+ * Send an invoice to the customer on demand (billing screen buttons).
+ * Any signed-in user (e.g. a cashier) may send; uses branch settings.
+ */
+router.post('/send', async (req, res, next) => {
+  try {
+    const branchId = resolveBranchId(req) || (req.body && req.body.branch);
+    if (!branchId) return res.status(400).json({ success: false, message: 'Branch is required' });
+    const { channel = 'both', email, phone, invoice, sale } = req.body || {};
+    const out = await notificationService.sendInvoiceNow(branchId, { channel, email, phone, invoice, sale });
+    const r = out.results || {};
+    const ok = r.email?.status === 'sent' || r.whatsapp?.status === 'sent';
+    res.json({
+      success: ok,
+      data: out,
+      message: out.error || r.email?.error || r.email?.reason || r.whatsapp?.error || r.whatsapp?.reason || (ok ? 'Sent' : 'Not sent'),
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.post('/test-email', requireRoles('superadmin', 'admin'), async (req, res, next) => {
   try {
     const branchId = resolveBranchId(req);
