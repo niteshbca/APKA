@@ -19,6 +19,7 @@ import { Button, Card, Modal, Field, Badge } from '../components/ui';
 import PaymentModal from '../components/Billing/PaymentModal';
 import InvoicePreview from '../components/Billing/InvoicePreview';
 import { printInvoice } from '../utils/print';
+import { waLink, mailtoLink, saleMessage, saleEmailSubject } from '../utils/notify';
 
 const CATEGORIES = [
   { id: 'all', name: 'All' },
@@ -65,7 +66,8 @@ export default function Billing() {
   const [customer, setCustomer] = useState(null);
   const [customerSearch, setCustomerSearch] = useState('');
   const [showCustomerModal, setShowCustomerModal] = useState(false);
-  const [newCustomer, setNewCustomer] = useState({ name: '', mobile: '', gstNumber: '', address: '' });
+  const [newCustomer, setNewCustomer] = useState({ name: '', mobile: '', email: '', gstNumber: '', address: '' });
+  const [showNotify, setShowNotify] = useState(null);
   const [showPayment, setShowPayment] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [preview, setPreview] = useState(null);
@@ -261,7 +263,7 @@ export default function Billing() {
       setCustomers((x) => [mapped, ...x]);
       setCustomer(mapped);
       setShowCustomerModal(false);
-      setNewCustomer({ name: '', mobile: '', gstNumber: '', address: '' });
+      setNewCustomer({ name: '', mobile: '', email: '', gstNumber: '', address: '' });
       toast('Customer saved', 'success');
     } catch (err) {
       toast(err.message, 'error');
@@ -277,6 +279,7 @@ export default function Billing() {
       businessPhone: settings.phone,
       customerName: saleOrInvoice.customerName || 'Walk-in Customer',
       customerMobile: saleOrInvoice.customerMobile || '',
+      customerEmail: saleOrInvoice.customerEmail || '',
       customerGst: saleOrInvoice.customerGst || '',
       customerAddress: saleOrInvoice.customerAddress || '',
       items: saleOrInvoice.items,
@@ -303,6 +306,8 @@ export default function Billing() {
     setSubmitting(true);
     const deviceId = await getDeviceId();
     const cashierName = user.name || 'cashier';
+    const saleEmail = (payment.email || customer?.email || '').trim();
+    const effectiveCustomer = saleEmail ? { ...(customer || {}), email: saleEmail } : customer;
 
     const base = {
       items: cart,
@@ -313,6 +318,7 @@ export default function Billing() {
       total: totals.total,
       customerName: customer?.name || '',
       customerMobile: customer?.mobile || '',
+      customerEmail: saleEmail,
       customerGst: customer?.gstNumber || '',
       customerAddress: customer?.address || '',
       paymentMode: payment.mode,
@@ -344,22 +350,25 @@ export default function Billing() {
         }
         loadProducts();
         setPreview({ invoice: invoiceRecord, invoiceNo: result.invoiceNo, synced: true });
-        toast(`Sale completed · ${result.invoiceNo}`, 'success');
+        toast(`Sale completed · ${result.invoiceNo}${saleEmail ? ' · email sent to customer' : ''}`, 'success');
+        setShowNotify({ invoice: { ...invoiceRecord, synced: true }, customer: effectiveCustomer, businessName: settings.businessName });
       } else {
         const result = await saveSaleOffline({
           items: cart,
           discount: totals.discount,
-          customer,
+          customer: effectiveCustomer,
           paymentMode: payment.mode,
           amountReceived: payment.amountReceived,
           changeDue: payment.changeDue,
           cashierName,
           deviceId,
           businessName: settings.businessName,
+          branch: activeBranch?._id,
         });
         const invoiceRecord = buildInvoiceRecord(result.invoice, { createdAt: result.invoice.createdAt });
         setPreview({ invoice: invoiceRecord, invoiceNo: result.invoice.invoiceNo, synced: false });
         toast('Offline sale saved · will sync when online', 'info');
+        setShowNotify({ invoice: { ...invoiceRecord, synced: false }, customer: effectiveCustomer, businessName: settings.businessName });
       }
       setCart([]);
       setDiscount('');
@@ -374,13 +383,14 @@ export default function Billing() {
           const result = await saveSaleOffline({
             items: cart,
             discount: totals.discount,
-            customer,
+            customer: effectiveCustomer,
             paymentMode: payment.mode,
             amountReceived: payment.amountReceived,
             changeDue: payment.changeDue,
             cashierName,
             deviceId,
             businessName: settings.businessName,
+            branch: activeBranch?._id,
           });
           const invoiceRecord = buildInvoiceRecord(result.invoice, { createdAt: result.invoice.createdAt });
           setPreview({ invoice: invoiceRecord, invoiceNo: result.invoice.invoiceNo, synced: false });
@@ -390,6 +400,7 @@ export default function Billing() {
           setQuery('');
           setShowPayment(false);
           toast('Server error — sale saved offline', 'info');
+          setShowNotify({ invoice: { ...invoiceRecord, synced: false }, customer: effectiveCustomer, businessName: settings.businessName });
         } catch (err2) {
           toast(`Sale failed: ${err2.message}`, 'error');
         }
@@ -774,9 +785,12 @@ export default function Billing() {
           <div className="form-row-3">
             <Field label="Name *"><input className="input" value={newCustomer.name} onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })} /></Field>
             <Field label="Mobile"><input className="input" value={newCustomer.mobile} onChange={(e) => setNewCustomer({ ...newCustomer, mobile: e.target.value })} /></Field>
-            <Field label="GST Number"><input className="input" value={newCustomer.gstNumber} onChange={(e) => setNewCustomer({ ...newCustomer, gstNumber: e.target.value })} /></Field>
+            <Field label="Email"><input className="input" type="email" value={newCustomer.email} onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })} placeholder="For invoice by email" /></Field>
           </div>
-          <Field label="Address"><input className="input" value={newCustomer.address} onChange={(e) => setNewCustomer({ ...newCustomer, address: e.target.value })} /></Field>
+          <div className="form-row">
+            <Field label="GST Number"><input className="input" value={newCustomer.gstNumber} onChange={(e) => setNewCustomer({ ...newCustomer, gstNumber: e.target.value })} /></Field>
+            <Field label="Address"><input className="input" value={newCustomer.address} onChange={(e) => setNewCustomer({ ...newCustomer, address: e.target.value })} /></Field>
+          </div>
           <Button className="btn-block" onClick={saveCustomer}>Save Customer</Button>
         </div>
       </Modal>
@@ -806,7 +820,38 @@ export default function Billing() {
         onClose={() => setShowPayment(false)}
         onConfirm={handleConfirmPayment}
         submitting={submitting}
+        customerEmail={customer?.email || ''}
       />
+
+      {showNotify && (() => {
+        const { invoice, customer, businessName } = showNotify;
+        const phone = customer?.mobile || invoice.customerMobile || '';
+        const email = customer?.email || invoice.customerEmail || '';
+        const msg = saleMessage(invoice, businessName);
+        return (
+          <Modal open onClose={() => setShowNotify(null)} title="Notify Customer" width={480}>
+            <p className="muted small mb-8">
+              Invoice <b>{invoice.invoiceNo}</b> saved{invoice.synced === false ? ' (offline — will sync)' : ''}. Auto email/WhatsApp are sent after sync if configured in <b>Notifications</b>.
+            </p>
+            <div style={{ display: 'grid', gap: 8, marginBottom: 12 }}>
+              {phone ? (
+                <a className="btn btn-block" href={waLink(phone, msg)} target="_blank" rel="noreferrer">💬 Send WhatsApp</a>
+              ) : (
+                <span className="muted small">No customer mobile — add a customer on the next bill for WhatsApp.</span>
+              )}
+              {email ? (
+                <a className="btn btn-secondary btn-block" href={mailtoLink(email, saleEmailSubject(invoice, businessName), msg)}>✉️ Send Email</a>
+              ) : (
+                <span className="muted small">No customer email — add an email on the next bill for the invoice email.</span>
+              )}
+            </div>
+            <details className="muted small" style={{ fontSize: 12 }}>
+              <summary>Preview message</summary>
+              <pre className="code-block" style={{ whiteSpace: 'pre-wrap' }}>{msg}</pre>
+            </details>
+          </Modal>
+        );
+      })()}
 
       {preview && (
         <InvoicePreview

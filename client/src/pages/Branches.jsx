@@ -4,11 +4,28 @@ import { useToast } from '../context/ToastContext';
 import { useBranch } from '../context/BranchContext';
 import { Button, Card, Modal, Field, Badge, EmptyState, Spinner } from '../components/ui';
 
+const NOTIF_EMPTY = {
+  email: { enabled: false, host: '', port: 587, secure: false, user: '', password: '', fromName: '', fromEmail: '' },
+  whatsapp: { enabled: false, provider: 'generic', apiUrl: '', accessToken: '', instanceId: '', phoneNumberId: '', senderNumber: '' },
+  autoSend: { onSale: true, onLowStock: false },
+  notify: { customerEmail: true, customerWhatsapp: true, ownerEmail: false, ownerWhatsapp: false },
+  ownerEmail: '',
+  ownerWhatsapp: '',
+};
+
 const EMPTY = {
   name: '', code: '', address: '', phone: '', email: '', gstin: '',
   isActive: true,
   settings: { invoicePrefix: 'INV', currency: 'INR', lowStockThreshold: 10 },
+  notifications: NOTIF_EMPTY,
 };
+
+const WA_PROVIDERS = [
+  { id: 'generic', label: 'Generic API (custom URL + token)' },
+  { id: 'meta', label: 'WhatsApp Cloud API (Meta)' },
+  { id: 'ultramsg', label: 'UltraMsg' },
+  { id: 'twilio', label: 'Twilio' },
+];
 
 export default function Branches() {
   const [rows, setRows] = useState(null);
@@ -30,7 +47,7 @@ export default function Branches() {
     setShowModal(true);
   };
 
-  const openEdit = (b) => {
+  const openEdit = async (b) => {
     setEditingId(b._id);
     setForm({
       name: b.name || '',
@@ -45,8 +62,28 @@ export default function Branches() {
         currency: b.settings?.currency || 'INR',
         lowStockThreshold: b.settings?.lowStockThreshold ?? 10,
       },
+      notifications: NOTIF_EMPTY,
     });
     setShowModal(true);
+    try {
+      const r = await api.get('/notifications/settings', { params: { branch: b._id } });
+      const s = r.data.data;
+      if (s) {
+        setForm((f) => ({
+          ...f,
+          notifications: {
+            email: { ...NOTIF_EMPTY.email, ...(s.email || {}) },
+            whatsapp: { ...NOTIF_EMPTY.whatsapp, ...(s.whatsapp || {}) },
+            autoSend: { ...NOTIF_EMPTY.autoSend, ...(s.autoSend || {}) },
+            notify: { ...NOTIF_EMPTY.notify, ...(s.notify || {}) },
+            ownerEmail: s.ownerEmail || '',
+            ownerWhatsapp: s.ownerWhatsapp || '',
+          },
+        }));
+      }
+    } catch (e) {
+      /* settings may not exist yet */
+    }
   };
 
   const save = async () => {
@@ -85,6 +122,12 @@ export default function Branches() {
 
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
   const setSetting = (k) => (e) => setForm({ ...form, settings: { ...form.settings, [k]: e.target.value } });
+  const setNotif = (group, k) => (e) => {
+    const val = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+    setForm((f) => ({ ...f, notifications: { ...f.notifications, [group]: { ...f.notifications[group], [k]: val } } }));
+  };
+  const setNotifTop = (k) => (e) => setForm((f) => ({ ...f, notifications: { ...f.notifications, [k]: e.target.value } }));
+  const n = form.notifications || NOTIF_EMPTY;
 
   return (
     <div>
@@ -164,6 +207,88 @@ export default function Branches() {
             </select>
           </Field>
         </div>
+
+        <details open style={{ margin: '8px 0 16px', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px' }}>
+          <summary style={{ cursor: 'pointer', fontWeight: 700 }}>
+            🔔 Sale Notifications — Email &amp; WhatsApp
+            <span className="muted small" style={{ fontWeight: 400 }}> (is branch ke liye alag)</span>
+          </summary>
+          <div className="muted small" style={{ margin: '8px 0 12px' }}>
+            Invoice confirm hone par customer ko isi branch ke email/WhatsApp se bhejenge.
+          </div>
+
+          <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12, marginTop: 4 }}>
+            <label className="flex gap-8" style={{ alignItems: 'center', fontWeight: 600, marginBottom: 8 }}>
+              <input type="checkbox" checked={!!n.email.enabled} onChange={setNotif('email', 'enabled')} />
+              ✉️ Email (SMTP) enable
+            </label>
+            <div className="form-row">
+              <Field label="SMTP Host"><input className="input" value={n.email.host} onChange={setNotif('email', 'host')} placeholder="smtp.gmail.com" /></Field>
+              <Field label="Port"><input className="input" type="number" value={n.email.port} onChange={setNotif('email', 'port')} placeholder="587" /></Field>
+            </div>
+            <div className="form-row">
+              <Field label="Email / Username"><input className="input" value={n.email.user} onChange={setNotif('email', 'user')} placeholder="shop@gmail.com" /></Field>
+              <Field label="App Password"><input className="input" type="password" value={n.email.password} onChange={setNotif('email', 'password')} placeholder="16-char app password" /></Field>
+            </div>
+            <div className="form-row">
+              <Field label="From Name"><input className="input" value={n.email.fromName} onChange={setNotif('email', 'fromName')} placeholder="My Store" /></Field>
+              <Field label="From Email"><input className="input" value={n.email.fromEmail} onChange={setNotif('email', 'fromEmail')} placeholder="billing@store.com" /></Field>
+            </div>
+            <Field label="Security">
+              <select className="select" value={n.email.secure ? 'ssl' : 'starttls'} onChange={(e) => setNotif('email', 'secure')({ target: { type: 'checkbox', checked: e.target.value === 'ssl' } })}>
+                <option value="starttls">STARTTLS (587 / 25)</option>
+                <option value="ssl">SSL/TLS (465)</option>
+              </select>
+            </Field>
+          </div>
+
+          <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12, marginTop: 12 }}>
+            <label className="flex gap-8" style={{ alignItems: 'center', fontWeight: 600, marginBottom: 8 }}>
+              <input type="checkbox" checked={!!n.whatsapp.enabled} onChange={setNotif('whatsapp', 'enabled')} />
+              💬 WhatsApp enable
+            </label>
+            <div className="form-row">
+              <Field label="Provider">
+                <select className="select" value={n.whatsapp.provider} onChange={setNotif('whatsapp', 'provider')}>
+                  {WA_PROVIDERS.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
+                </select>
+              </Field>
+              <Field label="Sender / From Number"><input className="input" value={n.whatsapp.senderNumber} onChange={setNotif('whatsapp', 'senderNumber')} placeholder="+91..." /></Field>
+            </div>
+            <Field label="API URL (generic / ultramsg)"><input className="input" value={n.whatsapp.apiUrl} onChange={setNotif('whatsapp', 'apiUrl')} placeholder="https://api.example.com/send" /></Field>
+            <Field label="Access Token / API Key"><input className="input" type="password" value={n.whatsapp.accessToken} onChange={setNotif('whatsapp', 'accessToken')} /></Field>
+            <div className="form-row">
+              <Field label="Instance ID (ultramsg)"><input className="input" value={n.whatsapp.instanceId} onChange={setNotif('whatsapp', 'instanceId')} /></Field>
+              <Field label="Phone Number ID (meta)"><input className="input" value={n.whatsapp.phoneNumberId} onChange={setNotif('whatsapp', 'phoneNumberId')} /></Field>
+            </div>
+          </div>
+
+          <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12, marginTop: 12 }}>
+            <label className="flex gap-8" style={{ alignItems: 'center', marginBottom: 6 }}>
+              <input type="checkbox" checked={!!n.autoSend.onSale} onChange={setNotif('autoSend', 'onSale')} />
+              Sale confirm par automatically bhejo
+            </label>
+            <div className="flex gap-16" style={{ flexWrap: 'wrap' }}>
+              <label className="flex gap-8" style={{ alignItems: 'center' }}>
+                <input type="checkbox" checked={!!n.notify.customerEmail} onChange={setNotif('notify', 'customerEmail')} /> Customer email
+              </label>
+              <label className="flex gap-8" style={{ alignItems: 'center' }}>
+                <input type="checkbox" checked={!!n.notify.customerWhatsapp} onChange={setNotif('notify', 'customerWhatsapp')} /> Customer WhatsApp
+              </label>
+              <label className="flex gap-8" style={{ alignItems: 'center' }}>
+                <input type="checkbox" checked={!!n.notify.ownerEmail} onChange={setNotif('notify', 'ownerEmail')} /> Owner email
+              </label>
+              <label className="flex gap-8" style={{ alignItems: 'center' }}>
+                <input type="checkbox" checked={!!n.notify.ownerWhatsapp} onChange={setNotif('notify', 'ownerWhatsapp')} /> Owner WhatsApp
+              </label>
+            </div>
+            <div className="form-row" style={{ marginTop: 8 }}>
+              <Field label="Owner Email"><input className="input" value={n.ownerEmail} onChange={setNotifTop('ownerEmail')} placeholder="owner@store.com" /></Field>
+              <Field label="Owner WhatsApp"><input className="input" value={n.ownerWhatsapp} onChange={setNotifTop('ownerWhatsapp')} placeholder="+91..." /></Field>
+            </div>
+          </div>
+        </details>
+
         <Button className="btn-block" onClick={save}>Save Branch</Button>
       </Modal>
     </div>

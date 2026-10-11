@@ -24,6 +24,7 @@ import Branches from './pages/Branches';
 import LicensePage from './pages/LicensePage';
 import LicenseAdmin from './pages/LicenseAdmin';
 import Settings from './pages/Settings';
+import Notifications from './pages/Notifications';
 
 function Protected({ children }) {
   const { ready } = useAuth();
@@ -70,6 +71,7 @@ function AppRoutes() {
                         <Route path="/license" element={<PermRoute perm="license.manage"><LicensePage /></PermRoute>} />
                         <Route path="/license-admin" element={<PermRoute superadminOnly><LicenseAdmin /></PermRoute>} />
                         <Route path="/settings" element={<PermRoute perm="settings.view"><Settings /></PermRoute>} />
+                        <Route path="/notifications" element={<PermRoute perm="settings.view"><Notifications /></PermRoute>} />
                         <Route path="*" element={<Navigate to="/" replace />} />
                       </Routes>
                     </ErrorBoundary>

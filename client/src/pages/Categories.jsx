@@ -5,12 +5,15 @@ import { queueOperation, supersedePendingOps } from '../db/offlineService';
 import { useToast } from '../context/ToastContext';
 import { useSync } from '../context/SyncContext';
 import { Button, Card, Modal, Field, EmptyState } from '../components/ui';
+import ImageField from '../components/ImageField';
 import { uid } from '../utils/format';
+
+const EMPTY = { name: '', description: '', image: '' };
 
 export default function Categories() {
   const [rows, setRows] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ name: '', description: '' });
+  const [form, setForm] = useState(EMPTY);
   const [editingId, setEditingId] = useState(null);
   const { toast } = useToast();
   const sync = useSync();
@@ -29,7 +32,7 @@ export default function Categories() {
 
   const save = async () => {
     if (!form.name.trim()) return toast('Name required', 'error');
-    const payload = { name: form.name.trim(), description: (form.description || '').trim() };
+    const payload = { name: form.name.trim(), description: (form.description || '').trim(), image: form.image || '' };
 
     const saveLocal = async () => {
       if (editingId) {
@@ -69,7 +72,7 @@ export default function Categories() {
         toast('Saved locally — will sync', 'success');
       }
       setShowModal(false);
-      setForm({ name: '', description: '' });
+      setForm(EMPTY);
       setEditingId(null);
       load();
     } catch (e) {
@@ -78,7 +81,7 @@ export default function Categories() {
           await saveLocal();
           toast('Saved locally — will sync', 'success');
           setShowModal(false);
-          setForm({ name: '', description: '' });
+          setForm(EMPTY);
           setEditingId(null);
           load();
           return;
@@ -120,7 +123,7 @@ export default function Categories() {
     <div>
       <div className="flex-between mb-16">
         <h2>Categories</h2>
-        <Button onClick={() => { setEditingId(null); setForm({ name: '', description: '' }); setShowModal(true); }}>＋ Add Category</Button>
+        <Button onClick={() => { setEditingId(null); setForm(EMPTY); setShowModal(true); }}>＋ Add Category</Button>
       </div>
       <Card>
         {rows === null ? (
@@ -133,11 +136,18 @@ export default function Categories() {
             <tbody>
               {rows.map((c) => (
                 <tr key={c._id}>
-                  <td style={{ fontWeight: 600 }}>{c.name}</td>
+                  <td>
+                    <div className="flex gap-8" style={{ alignItems: 'center' }}>
+                      <span className="thumb">
+                        {c.image ? <img src={c.image} alt={c.name} /> : <span className="thumb-empty">🗂️</span>}
+                      </span>
+                      <span style={{ fontWeight: 600 }}>{c.name}</span>
+                    </div>
+                  </td>
                   <td className="muted">{c.description || '—'}</td>
                   <td>
                     <div className="flex gap-8">
-                      <Button size="sm" variant="ghost" onClick={() => { setEditingId(c._id); setForm({ name: c.name, description: c.description }); setShowModal(true); }}>Edit</Button>
+                      <Button size="sm" variant="ghost" onClick={() => { setEditingId(c._id); setForm({ name: c.name, description: c.description, image: c.image || '' }); setShowModal(true); }}>Edit</Button>
                       <Button size="sm" variant="danger" onClick={() => remove(c)}>Del</Button>
                     </div>
                   </td>
@@ -151,6 +161,7 @@ export default function Categories() {
       <Modal open={showModal} title={editingId ? 'Edit Category' : 'Add Category'} onClose={() => setShowModal(false)}>
         <Field label="Name *"><input className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
         <Field label="Description"><textarea className="input" rows="3" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></Field>
+        <ImageField label="Category Image" value={form.image} onChange={(v) => setForm({ ...form, image: v })} toast={toast} />
         <Button className="btn-block" onClick={save}>Save</Button>
       </Modal>
     </div>

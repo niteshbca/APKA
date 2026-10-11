@@ -193,6 +193,20 @@ a { color: var(--primary); text-decoration: none; }
 .field label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 5px; color: var(--text-muted); }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+/* Image fields */
+.thumb { width: 38px; height: 38px; border-radius: 8px; overflow: hidden; flex: 0 0 38px; background: var(--bg); display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); }
+.thumb img { width: 100%; height: 100%; object-fit: cover; }
+.thumb-empty { font-size: 18px; opacity: .6; }
+.image-field { display: flex; gap: 14px; align-items: flex-start; }
+.image-preview { width: 96px; height: 96px; border-radius: 10px; border: 1px dashed var(--border); overflow: hidden; display: flex; align-items: center; justify-content: center; background: var(--bg); flex: 0 0 96px; }
+.image-preview img { width: 100%; height: 100%; object-fit: cover; }
+.image-preview-empty { font-size: 30px; opacity: .5; }
+.image-field-controls { flex: 1; display: grid; gap: 8px; }
+.btn-secondary { background: #64748b; }
+.btn-secondary:hover { background: #475569; }
+.code-block { background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-family: 'Consolas', 'Menlo', monospace; font-size: 12.5px; white-space: pre-wrap; overflow: auto; }
 
 /* Badges */
 .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
@@ -340,6 +354,8 @@ a { color: var(--primary); text-decoration: none; }
   .filter-bar .field { width: 100%; }
   .login-card { width: 100%; max-width: 400px; }
   .kbd { font-size: 10px; }
+  .grid-2 { grid-template-columns: 1fr; }
+  .image-field { flex-direction: column; align-items: flex-start; }
 }
 
 .downloads-wrap { width: 100%; max-width: 860px; padding: 24px; color: #fff; }

@@ -26,6 +26,7 @@ const invoiceSchema = new mongoose.Schema(
     businessPhone: { type: String, trim: true },
     customerName: { type: String, trim: true },
     customerMobile: { type: String, trim: true },
+    customerEmail: { type: String, trim: true, lowercase: true },
     customerGst: { type: String, trim: true },
     customerAddress: { type: String, trim: true },
     items: { type: [invoiceItemSchema], default: [] },

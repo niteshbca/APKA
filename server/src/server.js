@@ -24,6 +24,7 @@ const adminLicenseRoutes = require('./routes/adminLicense');
 const deviceRoutes = require('./routes/devices');
 const syncRoutes = require('./routes/sync');
 const settingRoutes = require('./routes/settings');
+const notificationRoutes = require('./routes/notifications');
 const cloudSyncRoutes = require('./routes/cloudSync');
 const cloudSyncWorker = require('./services/cloudSyncWorker');
 const keyService = require('./services/keyService');
@@ -67,6 +68,7 @@ app.use('/api/admin/license', adminLicenseRoutes);
 app.use('/api/devices', deviceRoutes);
 app.use('/api/sync', syncRoutes);
 app.use('/api/settings', settingRoutes);
+app.use('/api/notifications', notificationRoutes);
 app.use('/api/cloud', cloudSyncRoutes);
 
 // Desktop installer download (served from server/public/installer).

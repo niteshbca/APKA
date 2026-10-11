@@ -18,6 +18,7 @@ const NAV = [
   { to: '/users', label: 'Users', icon: '🔐', perm: 'users.view' },
   { to: '/license', label: 'License', icon: '🔑', perm: 'license.manage' },
   { to: '/license-admin', label: 'License Admin', icon: '🛡️', superadminOnly: true },
+  { to: '/notifications', label: 'Notifications', icon: '🔔', perm: 'settings.view' },
   { to: '/settings', label: 'Settings', icon: '⚙️', perm: 'settings.view' },
 ];
 

@@ -5,9 +5,10 @@ import { queueOperation, supersedePendingOps } from '../db/offlineService';
 import { useToast } from '../context/ToastContext';
 import { useSync } from '../context/SyncContext';
 import { Button, Card, Modal, Field, Badge, EmptyState, Spinner, Pagination } from '../components/ui';
+import ImageField from '../components/ImageField';
 import { money, uid } from '../utils/format';
 
-const emptyForm = { name: '', sku: '', barcode: '', category: '', purchasePrice: '', sellingPrice: '', gstRate: '0', stock: '0', minStock: '5' };
+const emptyForm = { name: '', sku: '', barcode: '', category: '', purchasePrice: '', sellingPrice: '', gstRate: '0', stock: '0', minStock: '5', image: '' };
 
 export default function Products() {
   const [rows, setRows] = useState(null);
@@ -71,6 +72,7 @@ export default function Products() {
       gstRate: Number(form.gstRate) || 0,
       stock: Number(form.stock) || 0,
       minStock: Number(form.minStock) || 0,
+      image: form.image || '',
     };
 
     const saveLocal = async () => {
@@ -145,6 +147,7 @@ export default function Products() {
       gstRate: p.gstRate,
       stock: p.stock,
       minStock: p.minStock,
+      image: p.image || '',
     });
     setShowModal(true);
   };
@@ -209,7 +212,14 @@ export default function Products() {
             <tbody>
               {rows.map((p) => (
                 <tr key={p._id || p.sku}>
-                  <td style={{ fontWeight: 600 }}>{p.name}</td>
+                  <td>
+                    <div className="flex gap-8" style={{ alignItems: 'center' }}>
+                      <span className="thumb">
+                        {p.image ? <img src={p.image} alt={p.name} /> : <span className="thumb-empty">📦</span>}
+                      </span>
+                      <span style={{ fontWeight: 600 }}>{p.name}</span>
+                    </div>
+                  </td>
                   <td className="muted">{p.sku}</td>
                   <td className="muted">{p.barcode || '—'}</td>
                   <td>{p.categoryName || '—'}</td>
@@ -257,6 +267,7 @@ export default function Products() {
           <Field label="Opening Stock"><input className="input" type="number" min="0" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} /></Field>
           <Field label="Minimum Stock Alert"><input className="input" type="number" min="0" value={form.minStock} onChange={(e) => setForm({ ...form, minStock: e.target.value })} /></Field>
         </div>
+        <ImageField label="Product Image" value={form.image} onChange={(v) => setForm({ ...form, image: v })} toast={toast} />
         <Button className="btn-block" onClick={save}>{editingId ? 'Update Product' : 'Save Product'}</Button>
       </Modal>
     </div>

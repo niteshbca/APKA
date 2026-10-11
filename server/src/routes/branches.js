@@ -3,10 +3,23 @@ const Branch = require('../models/Branch');
 const User = require('../models/User');
 const { verifyToken, requireRoles } = require('../middleware/auth');
 const { genClientId } = require('../utils/id');
+const notificationService = require('../services/notificationService');
 
 const router = express.Router();
 
 router.use(verifyToken);
+
+function hasNotificationConfig(body) {
+  if (!body) return false;
+  if (body.notifications && typeof body.notifications === 'object') return true;
+  // flat form: only count when these are objects (branch.email is a plain string)
+  return ['email', 'whatsapp', 'autoSend', 'notify'].some((k) => body[k] && typeof body[k] === 'object');
+}
+
+function notificationPayload(body) {
+  if (body && body.notifications && typeof body.notifications === 'object') return body.notifications;
+  return body || {};
+}
 
 router.get('/', async (req, res, next) => {
   try {
@@ -56,6 +69,9 @@ router.post('/', requireRoles('superadmin', 'admin'), async (req, res, next) => 
       isMain,
       settings: settings || {},
     });
+    if (hasNotificationConfig(req.body)) {
+      await notificationService.updateSettings(branch._id, notificationPayload(req.body), req.userId);
+    }
     res.status(201).json({ success: true, data: branch });
   } catch (err) {
     next(err);
@@ -81,6 +97,9 @@ router.put('/:id', requireRoles('superadmin', 'admin'), async (req, res, next) =
 
     branch.syncedFromCloud = false;
     await branch.save();
+    if (hasNotificationConfig(req.body)) {
+      await notificationService.updateSettings(branch._id, notificationPayload(req.body), req.userId);
+    }
     res.json({ success: true, data: branch });
   } catch (err) {
     next(err);

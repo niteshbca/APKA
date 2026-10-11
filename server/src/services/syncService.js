@@ -114,21 +114,25 @@ async function createSaleFromPayload(payload, { deviceId, cashier = null } = {})
   // 4. Customer snapshot + relationship
   let customerId = payload.customer || null;
   let customerClientId = payload.customerClientId || '';
-  if (payload.customerClientId || payload.customerName || payload.customerMobile) {
+  let customerEmail = payload.customerEmail || '';
+  if (payload.customerClientId || payload.customerName || payload.customerMobile || payload.customerEmail) {
     let existing = null;
     if (payload.customerClientId) existing = await Customer.findOne({ clientId: payload.customerClientId });
     if (!existing && payload.customerMobile) existing = await Customer.findOne({ mobile: payload.customerMobile });
     if (existing) {
       customerId = existing._id;
       customerClientId = existing.clientId || customerClientId;
+      if (!customerEmail && existing.email) customerEmail = existing.email;
       existing.totalPurchases = (existing.totalPurchases || 0) + totals.total;
       existing.lastPurchaseAt = new Date();
+      if (payload.customerEmail && payload.customerEmail !== existing.email) existing.email = payload.customerEmail;
       await existing.save();
     } else if (payload.customerName) {
       const cust = await Customer.create({
         clientId: payload.customerClientId || genClientId('cust'),
         name: payload.customerName,
         mobile: payload.customerMobile || '',
+        email: payload.customerEmail || '',
         gstNumber: payload.customerGst || '',
         address: payload.customerAddress || '',
         totalPurchases: totals.total,
@@ -136,6 +140,7 @@ async function createSaleFromPayload(payload, { deviceId, cashier = null } = {})
       });
       customerId = cust._id;
       customerClientId = cust.clientId;
+      if (!customerEmail && cust.email) customerEmail = cust.email;
     }
   }
 
@@ -150,6 +155,7 @@ async function createSaleFromPayload(payload, { deviceId, cashier = null } = {})
     customerSnapshot: {
       name: payload.customerName || '',
       mobile: payload.customerMobile || '',
+      email: customerEmail || '',
       gstNumber: payload.customerGst || '',
       address: payload.customerAddress || '',
     },
@@ -188,7 +194,7 @@ async function createSaleFromPayload(payload, { deviceId, cashier = null } = {})
   await applySaleStock(sale);
 
   // 7. Invoice snapshot
-  await Invoice.create({
+  const invoice = await Invoice.create({
     invoiceNo,
     clientSaleId: payload.clientSaleId,
     sale: sale._id,
@@ -198,6 +204,7 @@ async function createSaleFromPayload(payload, { deviceId, cashier = null } = {})
     businessPhone: payload.businessPhone || '',
     customerName: payload.customerName || '',
     customerMobile: payload.customerMobile || '',
+    customerEmail: customerEmail || '',
     customerGst: payload.customerGst || '',
     customerAddress: payload.customerAddress || '',
     items: totals.items.map((i) => ({
@@ -223,6 +230,17 @@ async function createSaleFromPayload(payload, { deviceId, cashier = null } = {})
     deviceId,
     createdAt: payload.createdAt ? new Date(payload.createdAt) : new Date(),
   });
+
+  // 8. Customer notifications (email / WhatsApp) — fire & forget so the sale
+  //    response is never blocked or failed by a slow/misconfigured provider.
+  try {
+    const notificationService = require('./notificationService');
+    notificationService
+      .dispatchSaleNotifications({ sale, invoice, branchId: sale.branch })
+      .catch((e) => console.error('[notify] sale dispatch error:', e.message));
+  } catch (e) {
+    console.error('[notify] could not load service:', e.message);
+  }
 
   return { status: 'created', invoiceNo, saleId: sale._id };
 }
@@ -334,7 +352,7 @@ async function processPush(deviceId, operations) {
           }
           product = new Product({ clientId: payload.clientId || genClientId('prod'), syncedFromCloud: false });
         }
-        for (const f of ['name', 'sku', 'barcode', 'category', 'categoryClientId', 'purchasePrice', 'sellingPrice', 'gstRate', 'stock', 'minStock', 'active']) {
+        for (const f of ['name', 'sku', 'barcode', 'category', 'categoryClientId', 'purchasePrice', 'sellingPrice', 'gstRate', 'stock', 'minStock', 'active', 'image']) {
           if (payload[f] !== undefined) product[f] = payload[f];
         }
         if (payload.categoryClientId) {
@@ -344,6 +362,7 @@ async function processPush(deviceId, operations) {
             product.categoryName = cat.name;
           }
         }
+        if (payload.branch && !product.branch) product.branch = payload.branch;
         if (product.category && mongoose.Types.ObjectId.isValid(String(product.category))) {
           const cat = await require('../models/Category').findById(product.category);
           if (cat) product.categoryName = cat.name;
@@ -369,8 +388,10 @@ async function processPush(deviceId, operations) {
           }
         }
         if (!category) category = new Category({ clientId: payload.clientId || genClientId('cat'), syncedFromCloud: false });
+        if (payload.branch && !category.branch) category.branch = payload.branch;
         if (payload.name) category.name = payload.name;
         if (payload.description !== undefined) category.description = payload.description;
+        if (payload.image !== undefined) category.image = payload.image;
         category.syncedFromCloud = false;
         await category.save();
         results.push({ clientOpId: op.clientOpId, status: 'done' });

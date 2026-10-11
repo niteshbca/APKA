@@ -68,7 +68,7 @@ export async function nextLocalInvoiceNo(deviceId) {
  * Saves a sale fully offline: records the sale + invoice snapshot, deducts
  * local stock and queues the operation for later sync.
  */
-export async function saveSaleOffline({ items, discount, customer, paymentMode, amountReceived, changeDue, cashierName, deviceId, businessName }) {
+export async function saveSaleOffline({ items, discount, customer, paymentMode, amountReceived, changeDue, cashierName, deviceId, businessName, branch }) {
   const totals = computeTotals(items, discount);
 
   const clientSaleId = uid('SALE');
@@ -105,6 +105,7 @@ export async function saveSaleOffline({ items, discount, customer, paymentMode, 
     customer: customer?.id || null,
     customerName: customer?.name || '',
     customerMobile: customer?.mobile || '',
+    customerEmail: customer?.email || '',
     customerGst: customer?.gstNumber || '',
     customerAddress: customer?.address || '',
     paymentMode,
@@ -112,6 +113,7 @@ export async function saveSaleOffline({ items, discount, customer, paymentMode, 
     changeDue: changeDue || 0,
     cashierName,
     deviceId,
+    branch,
     createdAt,
     synced: false,
     serverInvoiceNo: null,
@@ -124,6 +126,7 @@ export async function saveSaleOffline({ items, discount, customer, paymentMode, 
     businessName,
     customerName: customer?.name || 'Walk-in Customer',
     customerMobile: customer?.mobile || '',
+    customerEmail: customer?.email || '',
     customerGst: customer?.gstNumber || '',
     customerAddress: customer?.address || '',
     items: totals.items.map((i) => ({
@@ -172,6 +175,7 @@ export async function saveSaleOffline({ items, discount, customer, paymentMode, 
     total: totals.total,
     customerName: customer?.name || '',
     customerMobile: customer?.mobile || '',
+    customerEmail: customer?.email || '',
     customerGst: customer?.gstNumber || '',
     customerAddress: customer?.address || '',
     paymentMode,
@@ -179,6 +183,7 @@ export async function saveSaleOffline({ items, discount, customer, paymentMode, 
     changeDue: changeDue || 0,
     cashierName,
     deviceId,
+    branch,
     createdAt,
   });
 
@@ -330,6 +335,7 @@ export async function applyPull(data) {
         total: s.total,
         customerName: s.customerSnapshot?.name || '',
         customerMobile: s.customerSnapshot?.mobile || '',
+        customerEmail: s.customerSnapshot?.email || '',
         customerGst: s.customerSnapshot?.gstNumber || '',
         paymentMode: s.paymentMode,
         amountReceived: s.amountReceived,

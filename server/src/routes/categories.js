@@ -26,9 +26,15 @@ router.get('/', async (req, res, next) => {
 
 router.post('/', requireRoles('superadmin', 'admin'), async (req, res, next) => {
   try {
-    const { name, description } = req.body;
+    const { name, description, image } = req.body;
     if (!name) return res.status(400).json({ success: false, message: 'Category name is required' });
-    const category = await Category.create({ clientId: genClientId('cat'), name, description });
+    const category = await Category.create({
+      clientId: genClientId('cat'),
+      branch: (req.userRole !== 'superadmin' && req.userBranch) ? req.userBranch : (req.body.branch || undefined),
+      name,
+      description,
+      image: image || undefined,
+    });
     res.status(201).json({ success: true, data: category });
   } catch (err) {
     next(err);
@@ -41,6 +47,7 @@ router.put('/:id', requireRoles('superadmin', 'admin'), async (req, res, next) =
     if (!category) return res.status(404).json({ success: false, message: 'Category not found' });
     if (req.body.name) category.name = req.body.name;
     if (req.body.description !== undefined) category.description = req.body.description;
+    if (req.body.image !== undefined) category.image = req.body.image;
     category.syncedFromCloud = false;
     await category.save();
     res.json({ success: true, data: category });

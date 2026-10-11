@@ -8,16 +8,18 @@ const MODES = [
   { id: 'card', label: '💳 Card' },
 ];
 
-export default function PaymentModal({ open, totals, onClose, onConfirm, submitting }) {
+export default function PaymentModal({ open, totals, onClose, onConfirm, submitting, customerEmail }) {
   const [mode, setMode] = useState('cash');
   const [received, setReceived] = useState('');
+  const [email, setEmail] = useState('');
 
   useEffect(() => {
     if (open) {
       setMode('cash');
       setReceived(totals.total ? String(totals.total) : '');
+      setEmail(customerEmail || '');
     }
-  }, [open, totals.total]);
+  }, [open, totals.total, customerEmail]);
 
   const receivedNum = Number(received) || 0;
   const change = mode === 'cash' ? Math.max(0, receivedNum - totals.total) : 0;
@@ -32,7 +34,7 @@ export default function PaymentModal({ open, totals, onClose, onConfirm, submitt
         <>
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
           <Button
-            onClick={() => onConfirm({ mode, amountReceived: mode === 'cash' ? receivedNum : totals.total, changeDue: change })}
+            onClick={() => onConfirm({ mode, email: email.trim(), amountReceived: mode === 'cash' ? receivedNum : totals.total, changeDue: change })}
             disabled={submitting || (mode === 'cash' && receivedNum < totals.total)}
           >
             {submitting ? 'Processing...' : `Confirm ${money(totals.total)}`}
@@ -89,6 +91,19 @@ export default function PaymentModal({ open, totals, onClose, onConfirm, submitt
           Collect the exact amount via {mode.toUpperCase()}. Enter transaction reference on the invoice if needed.
         </div>
       )}
+
+      <div style={{ marginTop: 14, borderTop: '1px solid var(--border)', paddingTop: 14 }}>
+        <Field label="Customer Email — invoice confirm par customer ko bhejenge (optional)">
+          <input
+            className="input"
+            type="email"
+            placeholder="customer@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </Field>
+        <div className="muted small">Confirm dabane par is branch ki email/WhatsApp settings se customer ko invoice bhej diya jayega.</div>
+      </div>
     </Modal>
   );
 }

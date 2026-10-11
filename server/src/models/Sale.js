@@ -29,6 +29,7 @@ const saleSchema = new mongoose.Schema(
     customerSnapshot: {
       name: { type: String, trim: true },
       mobile: { type: String, trim: true },
+      email: { type: String, trim: true, lowercase: true },
       gstNumber: { type: String, trim: true },
       address: { type: String, trim: true },
     },
