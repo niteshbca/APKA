@@ -302,6 +302,21 @@ a { color: var(--primary); text-decoration: none; }
 .brand-name span { background: linear-gradient(90deg, #818cf8, #22d3ee); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
 .brand-auth { font-size: 10.5px; letter-spacing: 2.6px; text-transform: uppercase; color: #9fb0d0; margin-top: 4px; font-weight: 700; }
 .login-hero-body h2 { font-size: 30px; line-height: 1.2; font-weight: 800; color: #fff; margin-bottom: 14px; }
+.login-trial {
+  display: inline-flex; flex-direction: column; gap: 3px; align-self: flex-start;
+  margin-bottom: 24px; padding: 11px 18px; border-radius: 14px;
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.2), rgba(168, 85, 247, 0.2));
+  border: 1px solid rgba(34, 211, 238, 0.5);
+  animation: trialGlow 2.8s ease-in-out infinite;
+}
+.login-trial b { font-size: 19px; font-weight: 800; letter-spacing: 0.2px; background: linear-gradient(90deg, #67e8f9, #c084fc); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.login-trial span { font-size: 11.5px; color: #b9c4dd; letter-spacing: 0.3px; }
+@keyframes trialGlow {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04), 0 8px 30px rgba(34, 211, 238, 0.22); }
+  50% { box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.07), 0 12px 42px rgba(168, 85, 247, 0.42); }
+}
+.login-trial-chip { display: none; margin-top: 14px; font-size: 13px; color: var(--text-muted); }
+.login-trial-chip b { color: #7c3aed; font-weight: 800; }
 .login-hero-body > p { color: #b9c4dd; font-size: 14.5px; line-height: 1.65; margin-bottom: 26px; }
 .login-features { list-style: none; display: flex; flex-direction: column; gap: 14px; }
 .login-features li { display: flex; align-items: center; gap: 12px; font-size: 14px; color: #dbe4f7; }
@@ -349,10 +364,11 @@ a { color: var(--primary); text-decoration: none; }
   .mini-mark { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 21px; background: linear-gradient(135deg, #6366f1, #22d3ee); }
   .mini-name { font-size: 20px; font-weight: 800; }
   .mini-name b { background: linear-gradient(90deg, #4f46e5, #22d3ee); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+  .login-trial-chip { display: block; text-align: center; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .orb, .brand-mark, .btn-login::after, .login-shell { animation: none !important; }
+  .orb, .brand-mark, .btn-login::after, .login-shell, .login-trial { animation: none !important; }
 }
 
 /* License screens */

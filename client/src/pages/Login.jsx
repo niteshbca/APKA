@@ -66,6 +66,10 @@ export default function Login() {
           </header>
 
           <div className="login-hero-body">
+            <div className="login-trial">
+              <b>🎁 15 Days Free</b>
+              <span>Full premium access · No card required</span>
+            </div>
             <h2>Run your entire store from one premium screen.</h2>
             <p>
               Billing, inventory, accounting and staff — an international-grade
@@ -102,6 +106,7 @@ export default function Login() {
                 ? 'Sign in to your NiteshPro POS workspace'
                 : 'Enter your quick login PIN'}
             </div>
+            <div className="login-trial-chip"><b>🎁 15 Days Free</b> · full premium access</div>
           </div>
 
           <div className="login-tabs">
