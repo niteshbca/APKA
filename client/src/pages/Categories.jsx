@@ -4,7 +4,7 @@ import db from '../db';
 import { queueOperation, supersedePendingOps } from '../db/offlineService';
 import { useToast } from '../context/ToastContext';
 import { useSync } from '../context/SyncContext';
-import { Button, Card, Modal, Field, EmptyState } from '../components/ui';
+import { Button, Card, Modal, Field, EmptyState, Spinner } from '../components/ui';
 import ImageField from '../components/ImageField';
 import { uid } from '../utils/format';
 
@@ -15,16 +15,24 @@ export default function Categories() {
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState(EMPTY);
   const [editingId, setEditingId] = useState(null);
+  const [error, setError] = useState(null);
   const { toast } = useToast();
   const sync = useSync();
   const online = sync.status !== 'OFFLINE';
 
   const load = () => {
+    setError(null);
     api.get('/categories').then((r) => {
       setRows(r.data.data);
       db.putMany('categories', r.data.data.map((c) => ({ ...c, id: c._id })));
-    }).catch(() => {
-      db.getAll('categories').then((all) => setRows(all));
+    }).catch(async (e) => {
+      const all = await db.getAll('categories');
+      if (all.length > 0 || !online) {
+        setRows(all);
+      } else {
+        setRows([]);
+        setError(e.message || 'Could not load categories');
+      }
     });
   };
 
@@ -127,7 +135,14 @@ export default function Categories() {
       </div>
       <Card>
         {rows === null ? (
-          <div className="muted">Loading…</div>
+          <Spinner />
+        ) : error ? (
+          <>
+            <EmptyState icon="📡" title="Could not load categories" sub={error} />
+            <div className="flex" style={{ justifyContent: 'center' }}>
+              <Button onClick={load}>Retry</Button>
+            </div>
+          </>
         ) : rows.length === 0 ? (
           <EmptyState icon="🗂️" title="No categories" />
         ) : (

@@ -98,6 +98,34 @@ const PERMISSIONS = [
   { key: 'marketing.view', label: 'View campaigns', module: 'marketing' },
   { key: 'marketing.send', label: 'Send campaigns', module: 'marketing' },
 
+  // HR & payroll
+  { key: 'hr.view', label: 'View staff / HR', module: 'hr' },
+  { key: 'hr.manage', label: 'Manage employees', module: 'hr' },
+  { key: 'hr.payroll', label: 'Manage salary / payroll', module: 'hr' },
+  { key: 'hr.attendance', label: 'Mark attendance', module: 'hr' },
+
+  // Accounts
+  { key: 'accounts.view', label: 'View accounts', module: 'accounts' },
+  { key: 'accounts.manage', label: 'Manage income & expenses', module: 'accounts' },
+  { key: 'accounts.report', label: 'View account reports', module: 'accounts' },
+
+  // Tasks
+  { key: 'tasks.view', label: 'View tasks', module: 'tasks' },
+  { key: 'tasks.manage', label: 'Create / edit tasks', module: 'tasks' },
+  { key: 'tasks.assign', label: 'Assign tasks', module: 'tasks' },
+
+  // Operations
+  { key: 'operations.view', label: 'View operations', module: 'operations' },
+  { key: 'operations.manage', label: 'Manage operations', module: 'operations' },
+
+  // AI assistant
+  { key: 'ai.view', label: 'Open AI assistant', module: 'ai' },
+  { key: 'ai.use', label: 'Ask the AI assistant', module: 'ai' },
+
+  // Integrations
+  { key: 'integrations.view', label: 'View integrations', module: 'integrations' },
+  { key: 'integrations.manage', label: 'Manage integrations', module: 'integrations' },
+
   // Subscription & license
   { key: 'license.view', label: 'View subscription', module: 'subscription' },
   { key: 'license.manage', label: 'Manage subscription/license', module: 'subscription' },
@@ -125,6 +153,11 @@ const ROLE_TEMPLATES = {
     'labels.view', 'labels.print', 'labels.template', 'labels.reprint', 'labels.prices',
     'reports.view', 'reports.export',
     'users.view', 'branches.view', 'settings.view', 'marketing.view',
+    'hr.view', 'hr.attendance',
+    'accounts.view',
+    'tasks.view', 'tasks.manage',
+    'operations.view',
+    'ai.view', 'ai.use',
   ],
   cashier: [
     'dashboard.view',
@@ -133,6 +166,8 @@ const ROLE_TEMPLATES = {
     'customers.view', 'customers.create',
     'invoices.view',
     'labels.view', 'labels.print',
+    'tasks.view',
+    'ai.view', 'ai.use',
   ],
 };
 

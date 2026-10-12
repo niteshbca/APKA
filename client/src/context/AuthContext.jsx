@@ -61,7 +61,10 @@ export function AuthProvider({ children }) {
 
   const hasPermission = useCallback((perm) => {
     if (!user) return false;
-    if (user.role === 'superadmin' || user.isPlatformAdmin) return true;
+    // Platform admins and tenant owners/admins have full access. The admin role
+    // template already grants every permission; treating it as a wildcard here
+    // also covers accounts created before a new permission existed (stale array).
+    if (user.role === 'superadmin' || user.role === 'admin' || user.isPlatformAdmin) return true;
     if (!perm) return true;
     const perms = user.permissions || [];
     if (perms.includes('*')) return true;

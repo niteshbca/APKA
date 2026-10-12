@@ -18,11 +18,13 @@ export default function Reports() {
   const [to, setTo] = useState(new Date().toISOString().slice(0, 10));
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const params = { from, to };
 
   const fetchData = async () => {
     setLoading(true);
+    setError(null);
     try {
       if (tab === 'sales') {
         const r = await api.get('/reports/sales', { params });
@@ -44,7 +46,8 @@ export default function Reports() {
         setData(r.data.data);
       }
     } catch (e) {
-      setData([]);
+      setData(null);
+      setError(e.response?.data?.message || e.message || 'Could not load report');
     } finally {
       setLoading(false);
     }
@@ -75,7 +78,7 @@ export default function Reports() {
               <Button onClick={fetchData}>Apply Range</Button>
             </>
           )}
-          {tab === 'profit' && data && (
+          {tab === 'profit' && data && !Array.isArray(data) && (
             <div className="flex gap-8">
               <Badge tone="info">Revenue {money(data.revenue)}</Badge>
               <Badge tone="warning">Cost {money(data.cost)}</Badge>
@@ -90,7 +93,12 @@ export default function Reports() {
 
         {loading ? (
           <Spinner />
-        ) : !data || (Array.isArray(data) && data.length === 0) ? (
+        ) : error ? (
+          <>
+            <EmptyState icon="📡" title="Could not load report" sub={error} />
+            <div className="flex" style={{ justifyContent: 'center' }}><Button onClick={fetchData}>Retry</Button></div>
+          </>
+        ) : !data || (Array.isArray(data) && data.length === 0) || (tab === 'profit' && !Array.isArray(data) && (data.invoices || 0) === 0 && (!data.buckets || data.buckets.length === 0)) ? (
           <EmptyState icon="📊" title="No data for this range" />
         ) : tab === 'sales' ? (
           <table className="table">
@@ -105,6 +113,14 @@ export default function Reports() {
                 </tr>
               ))}
             </tbody>
+            <tfoot>
+              <tr>
+                <td style={{ fontWeight: 700 }}>Total</td>
+                <td style={{ fontWeight: 700 }}>{money(data.reduce((a, b) => a + (b.sales || 0), 0))}</td>
+                <td style={{ fontWeight: 700 }}>{data.reduce((a, b) => a + (b.invoices || 0), 0)}</td>
+                <td style={{ fontWeight: 700 }}>{money(data.reduce((a, b) => a + (b.profit || 0), 0))}</td>
+              </tr>
+            </tfoot>
           </table>
         ) : tab === 'product' ? (
           <table className="table">
@@ -121,6 +137,15 @@ export default function Reports() {
                 </tr>
               ))}
             </tbody>
+            <tfoot>
+              <tr>
+                <td colSpan={2} style={{ fontWeight: 700 }}>Total</td>
+                <td style={{ fontWeight: 700 }}>{data.reduce((a, b) => a + (b.qty || 0), 0)}</td>
+                <td style={{ fontWeight: 700 }}>{money(data.reduce((a, b) => a + (b.revenue || 0), 0))}</td>
+                <td style={{ fontWeight: 700 }}>{money(data.reduce((a, b) => a + (b.cost || 0), 0))}</td>
+                <td style={{ fontWeight: 700 }}>{money(data.reduce((a, b) => a + (b.profit || 0), 0))}</td>
+              </tr>
+            </tfoot>
           </table>
         ) : tab === 'customer' ? (
           <table className="table">
@@ -135,6 +160,13 @@ export default function Reports() {
                 </tr>
               ))}
             </tbody>
+            <tfoot>
+              <tr>
+                <td colSpan={2} style={{ fontWeight: 700 }}>Total</td>
+                <td style={{ fontWeight: 700 }}>{data.reduce((a, b) => a + (b.invoices || 0), 0)}</td>
+                <td style={{ fontWeight: 700 }}>{money(data.reduce((a, b) => a + (b.sales || 0), 0))}</td>
+              </tr>
+            </tfoot>
           </table>
         ) : tab === 'payment' ? (
           <table className="table">
@@ -142,32 +174,51 @@ export default function Reports() {
             <tbody>
               {data.map((r, i) => (
                 <tr key={i}>
-                  <td><span className="badge badge-info">{r.paymentMode.toUpperCase()}</span></td>
+                  <td><Badge tone="info">{(r.paymentMode || '').toUpperCase()}</Badge></td>
                   <td>{money(r.amount)}</td>
                   <td>{r.count}</td>
                 </tr>
               ))}
             </tbody>
+            <tfoot>
+              <tr>
+                <td style={{ fontWeight: 700 }}>Total</td>
+                <td style={{ fontWeight: 700 }}>{money(data.reduce((a, b) => a + (b.amount || 0), 0))}</td>
+                <td style={{ fontWeight: 700 }}>{data.reduce((a, b) => a + (b.count || 0), 0)}</td>
+              </tr>
+            </tfoot>
           </table>
-        ) : tab === 'profit' && Array.isArray(data.buckets) ? (
-          <table className="table">
-            <thead><tr><th>Period</th><th>Sales</th><th>Profit</th><th>Invoices</th></tr></thead>
-            <tbody>
-              {data.buckets.map((r) => (
-                <tr key={r.date}>
-                  <td>{r.date}</td>
-                  <td>{money(r.sales)}</td>
-                  <td>{money(r.profit)}</td>
-                  <td>{r.invoices}</td>
+        ) : tab === 'profit' ? (
+          data.buckets && data.buckets.length > 0 ? (
+            <table className="table">
+              <thead><tr><th>Period</th><th>Sales</th><th>Profit</th><th>Invoices</th></tr></thead>
+              <tbody>
+                {data.buckets.map((r) => (
+                  <tr key={r.date}>
+                    <td>{r.date}</td>
+                    <td>{money(r.sales)}</td>
+                    <td>{money(r.profit)}</td>
+                    <td>{r.invoices}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td style={{ fontWeight: 700 }}>Total</td>
+                  <td style={{ fontWeight: 700 }}>{money(data.revenue)}</td>
+                  <td style={{ fontWeight: 700 }}>{money(data.profit)}</td>
+                  <td style={{ fontWeight: 700 }}>{data.invoices}</td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </tfoot>
+            </table>
+          ) : (
+            <EmptyState icon="📊" title="No data for this range" />
+          )
         ) : (
           <table className="table">
             <thead><tr><th>Product</th><th>SKU</th><th>Stock</th><th>Min</th><th>Status</th></tr></thead>
             <tbody>
-              {data.map((p) => (
+              {Array.isArray(data) && data.map((p) => (
                 <tr key={p.sku}>
                   <td>{p.name}</td>
                   <td className="muted">{p.sku}</td>

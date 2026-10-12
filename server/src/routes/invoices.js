@@ -18,7 +18,13 @@ router.get('/', async (req, res, next) => {
       if (to) query.createdAt.$lte = new Date(to);
     }
     if (paymentMode) query.paymentMode = paymentMode;
-    if (search) query.invoiceNo = { $regex: search, $options: 'i' };
+    if (search) {
+      query.$or = [
+        { invoiceNo: { $regex: search, $options: 'i' } },
+        { customerName: { $regex: search, $options: 'i' } },
+        { customerMobile: { $regex: search, $options: 'i' } },
+      ];
+    }
 
     const total = await Invoice.countDocuments(query);
     const data = await Invoice.find(query).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(Number(limit));

@@ -31,6 +31,13 @@ const moduleRoutes = require('./routes/modules');
 const labelRoutes = require('./routes/labels');
 const masterRoutes = require('./routes/masters');
 const supplierRoutes = require('./routes/suppliers');
+const hrRoutes = require('./routes/hr');
+const accountRoutes = require('./routes/accounts');
+const taskRoutes = require('./routes/tasks');
+const aiRoutes = require('./routes/ai');
+const operationsRoutes = require('./routes/operations');
+const marketingRoutes = require('./routes/marketing');
+const integrationsRoutes = require('./routes/integrations');
 const cloudSyncWorker = require('./services/cloudSyncWorker');
 const keyService = require('./services/keyService');
 const licenseService = require('./services/licenseService');
@@ -80,6 +87,13 @@ app.use('/api/modules', moduleRoutes);
 app.use('/api/labels', labelRoutes);
 app.use('/api/masters', masterRoutes);
 app.use('/api/suppliers', supplierRoutes);
+app.use('/api/hr', hrRoutes);
+app.use('/api/accounts', accountRoutes);
+app.use('/api/tasks', taskRoutes);
+app.use('/api/ai', aiRoutes);
+app.use('/api/operations', operationsRoutes);
+app.use('/api/marketing', marketingRoutes);
+app.use('/api/integrations', integrationsRoutes);
 
 // Desktop installer download (served from server/public/installer).
 const INSTALLER_DIR = path.join(__dirname, '..', 'public', 'installer');

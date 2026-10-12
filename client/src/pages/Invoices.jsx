@@ -4,7 +4,7 @@ import db from '../db';
 import { queueOperation, supersedePendingOps } from '../db/offlineService';
 import { useToast } from '../context/ToastContext';
 import { useSync } from '../context/SyncContext';
-import { Button, Card, Modal, EmptyState, Spinner, Pagination } from '../components/ui';
+import { Button, Card, Modal, EmptyState, Spinner, Pagination, Badge } from '../components/ui';
 import { money, fmtDateTime } from '../utils/format';
 import { printInvoice } from '../utils/print';
 
@@ -12,28 +12,38 @@ export default function Invoices() {
   const [rows, setRows] = useState(null);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [settings, setSettings] = useState({});
   const [view, setView] = useState(null);
+  const [error, setError] = useState(null);
   const { toast } = useToast();
   const sync = useSync();
   const online = sync.status !== 'OFFLINE';
 
   const load = useCallback(() => {
+    setError(null);
     api.get('/invoices', { params: { page, limit: 20, search } }).then((r) => {
       setRows(r.data.data);
       setTotal(r.data.total);
-    }).catch(() => {
-      db.getAll('invoices').then((all) => {
-        const q = search.toLowerCase();
-        const filtered = q ? all.filter((i) => String(i.invoiceNo || '').toLowerCase().includes(q)) : all;
-        setRows(filtered.slice(0, 20));
-        setTotal(filtered.length);
-      });
+    }).catch(async () => {
+      const all = await db.getAll('invoices');
+      const q = search.toLowerCase();
+      const filtered = q
+        ? all.filter((i) => `${i.invoiceNo || ''} ${i.customerName || ''} ${i.customerMobile || ''}`.toLowerCase().includes(q))
+        : all;
+      setRows(filtered.slice(0, 20));
+      setTotal(filtered.length);
+      if (filtered.length === 0 && online) setError('Could not load invoices from the server.');
     });
-  }, [page, search]);
+  }, [page, search, online]);
 
   useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    const t = setTimeout(() => { setSearch(searchInput); setPage(1); }, 300);
+    return () => clearTimeout(t);
+  }, [searchInput]);
 
   useEffect(() => {
     db.get('settings', 'business_settings').then(setSettings);
@@ -96,13 +106,18 @@ export default function Invoices() {
     <div>
       <div className="flex-between mb-16">
         <h2>Invoices</h2>
-        <div style={{ maxWidth: 260 }}>
-          <input className="input" placeholder="Search invoice no…" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} />
+        <div style={{ maxWidth: 280 }}>
+          <input className="input" placeholder="Search invoice no / customer…" value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
         </div>
       </div>
       <Card>
         {rows === null ? (
           <Spinner />
+        ) : error ? (
+          <>
+            <EmptyState icon="📡" title="Could not load invoices" sub={error} />
+            <div className="flex" style={{ justifyContent: 'center' }}><Button onClick={load}>Retry</Button></div>
+          </>
         ) : rows.length === 0 ? (
           <EmptyState icon="🧾" title="No invoices yet" />
         ) : (
@@ -115,7 +130,7 @@ export default function Invoices() {
                   <td className="muted">{fmtDateTime(inv.createdAt)}</td>
                   <td>{inv.customerName || '—'}</td>
                   <td>{inv.items?.length || 0}</td>
-                  <td><span className="badge badge-info">{inv.paymentMode?.toUpperCase()}</span></td>
+                  <td><Badge tone="info">{inv.paymentMode?.toUpperCase()}</Badge></td>
                   <td style={{ textAlign: 'right', fontWeight: 700 }}>{money(inv.total)}</td>
                   <td>
                     <div className="flex gap-8">
@@ -128,9 +143,16 @@ export default function Invoices() {
                 </tr>
               ))}
             </tbody>
+            <tfoot>
+              <tr>
+                <td colSpan={5} style={{ textAlign: 'right', fontWeight: 600 }}>Page total ({rows.length} invoices)</td>
+                <td style={{ textAlign: 'right', fontWeight: 800 }}>{money(rows.reduce((s, i) => s + (i.total || 0), 0))}</td>
+                <td></td>
+              </tr>
+            </tfoot>
           </table>
         )}
-        <Pagination page={page} total={total} limit={20} onPage={setPage} />
+        {total > 0 && <Pagination page={page} total={total} limit={20} onPage={setPage} />}
       </Card>
 
       <Modal open={!!view} title={`Invoice ${view?.invoiceNo || ''}`} onClose={() => setView(null)} width={640}>

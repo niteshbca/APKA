@@ -29,6 +29,15 @@ import Notifications from './pages/Notifications';
 import LabelPrinting from './pages/LabelPrinting';
 import Modules from './pages/Modules';
 import PlatformAdmin from './pages/PlatformAdmin';
+import ModulePlaceholder from './pages/ModulePlaceholder';
+import HR from './pages/HR';
+import Accounts from './pages/Accounts';
+import Tasks from './pages/Tasks';
+import AiAssistant from './pages/AiAssistant';
+import Masters from './pages/Masters';
+import Marketing from './pages/Marketing';
+import Operations from './pages/Operations';
+import Integrations from './pages/Integrations';
 
 function Protected({ children }) {
   const { ready } = useAuth();
@@ -85,6 +94,15 @@ function AppRoutes() {
                           <Route path="/platform" element={<PermRoute superadminOnly><PlatformAdmin /></PermRoute>} />
                           <Route path="/settings" element={<PermRoute perm="settings.view"><Settings /></PermRoute>} />
                           <Route path="/notifications" element={<PermRoute perm="settings.view"><Notifications /></PermRoute>} />
+                          <Route path="/hr" element={<ModuleRoute module="hr"><PermRoute perm="hr.view"><HR /></PermRoute></ModuleRoute>} />
+                          <Route path="/accounts" element={<ModuleRoute module="accounts"><PermRoute perm="accounts.view"><Accounts /></PermRoute></ModuleRoute>} />
+                          <Route path="/tasks" element={<ModuleRoute module="tasks"><PermRoute perm="tasks.view"><Tasks /></PermRoute></ModuleRoute>} />
+                          <Route path="/ai" element={<ModuleRoute module="ai"><PermRoute perm="ai.view"><AiAssistant /></PermRoute></ModuleRoute>} />
+                          <Route path="/masters" element={<ModuleRoute module="master"><PermRoute perm="master.view"><Masters /></PermRoute></ModuleRoute>} />
+                          <Route path="/marketing" element={<ModuleRoute module="marketing"><PermRoute perm="marketing.view"><Marketing /></PermRoute></ModuleRoute>} />
+                          <Route path="/operations" element={<ModuleRoute module="operations"><PermRoute perm="operations.view"><Operations /></PermRoute></ModuleRoute>} />
+                          <Route path="/integrations" element={<ModuleRoute module="integrations"><PermRoute perm="integrations.view"><Integrations /></PermRoute></ModuleRoute>} />
+                          <Route path="/module/:key" element={<ModulePlaceholder />} />
                           <Route path="*" element={<Navigate to="/" replace />} />
                         </Routes>
                       </ErrorBoundary>

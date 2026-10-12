@@ -13,6 +13,7 @@ const emptyForm = { name: '', sku: '', barcode: '', category: '', purchasePrice:
 export default function Products() {
   const [rows, setRows] = useState(null);
   const [categories, setCategories] = useState([]);
+  const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [lowStockOnly, setLowStockOnly] = useState(false);
@@ -35,9 +36,10 @@ export default function Products() {
     } catch {
       // offline fallback
       const all = await db.getAll('products');
+      const catName = categories.find((c) => c._id === categoryFilter)?.name;
       const filtered = all.filter((p) => {
         if (lowStockOnly && !p.isLowStock) return false;
-        if (categoryFilter && p.category !== categoryFilter && p.categoryName !== categoryFilter) return false;
+        if (categoryFilter && p.category !== categoryFilter && (p.categoryName || '') !== (catName || '\u0000')) return false;
         if (search) {
           const q = search.toLowerCase();
           if (![p.name, p.sku, p.barcode].some((v) => String(v || '').toLowerCase().includes(q))) return false;
@@ -47,11 +49,17 @@ export default function Products() {
       setRows(filtered);
       setTotal(filtered.length);
     }
-  }, [page, search, categoryFilter, lowStockOnly]);
+  }, [page, search, categoryFilter, lowStockOnly, categories]);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  // Debounce the search box so we don't fire a request per keystroke.
+  useEffect(() => {
+    const t = setTimeout(() => { setSearch(searchInput); setPage(1); }, 300);
+    return () => clearTimeout(t);
+  }, [searchInput]);
 
   useEffect(() => {
     api.get('/categories').then((r) => setCategories(r.data.data)).catch(() => {});
@@ -186,7 +194,7 @@ export default function Products() {
 
       <Card>
         <div className="flex gap-8 mb-16" style={{ flexWrap: 'wrap' }}>
-          <input className="input" placeholder="Search name / SKU / barcode…" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} style={{ maxWidth: 320 }} />
+          <input className="input" placeholder="Search name / SKU / barcode…" value={searchInput} onChange={(e) => setSearchInput(e.target.value)} style={{ maxWidth: 320 }} />
           <select className="select" value={categoryFilter} onChange={(e) => { setCategoryFilter(e.target.value); setPage(1); }} style={{ maxWidth: 200 }}>
             <option value="">All categories</option>
             {categories.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
@@ -241,7 +249,7 @@ export default function Products() {
             </tbody>
           </table>
         )}
-        <Pagination page={page} total={total} limit={20} onPage={setPage} />
+        {total > 0 && <Pagination page={page} total={total} limit={20} onPage={setPage} />}
       </Card>
 
       <Modal open={showModal} title={editingId ? 'Edit Product' : 'Add Product'} onClose={() => setShowModal(false)} width={640}>

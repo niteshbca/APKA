@@ -5,25 +5,52 @@ import { useSync } from '../context/SyncContext';
 import { useBranch } from '../context/BranchContext';
 import { useModules } from '../context/ModulesContext';
 
+// Ordered sidebar sections — gives the app a professional, scannable layout.
+const GROUP_ORDER = ['Overview', 'Sales', 'Inventory', 'Finance', 'People', 'Operations', 'Marketing', 'Intelligence', 'Administration'];
+
 const NAV = [
-  { to: '/', label: 'Dashboard', icon: '📊', perm: 'dashboard.view', module: 'dashboard' },
-  { to: '/billing', label: 'Billing', icon: '🧾', perm: 'sales.create', module: 'sales' },
-  { to: '/products', label: 'Products', icon: '📦', perm: 'products.view', module: 'products' },
-  { to: '/categories', label: 'Categories', icon: '🗂️', perm: 'categories.view', module: 'products' },
-  { to: '/customers', label: 'Customers', icon: '👥', perm: 'customers.view', module: 'crm' },
-  { to: '/purchases', label: 'Purchases', icon: '📥', perm: 'purchases.view', module: 'purchases' },
-  { to: '/inventory', label: 'Inventory', icon: '🏬', perm: 'inventory.view', module: 'inventory' },
-  { to: '/invoices', label: 'Invoices', icon: '📄', perm: 'sales.view', module: 'invoices' },
-  { to: '/labels', label: 'Label Printing', icon: '🏷️', perm: 'labels.view', module: 'labels' },
-  { to: '/reports', label: 'Reports', icon: '📈', perm: 'reports.view', module: 'reports' },
-  { to: '/branches', label: 'Branches', icon: '🏢', perm: 'branches.view', module: 'branches' },
-  { to: '/users', label: 'Users', icon: '🔐', perm: 'users.view', module: 'admin' },
-  { to: '/modules', label: 'Modules', icon: '🧩', perm: 'settings.edit', module: 'settings' },
-  { to: '/license', label: 'License', icon: '🔑', perm: 'license.manage', module: 'subscription' },
-  { to: '/notifications', label: 'Notifications', icon: '🔔', perm: 'settings.view', module: 'notifications' },
-  { to: '/settings', label: 'Settings', icon: '⚙️', perm: 'settings.view', module: 'settings' },
-  { to: '/license-admin', label: 'License Admin', icon: '🛡️', superadminOnly: true, platform: true },
-  { to: '/platform', label: 'Platform', icon: '🌐', superadminOnly: true, platform: true },
+  { to: '/', label: 'Dashboard', icon: '📊', perm: 'dashboard.view', module: 'dashboard', group: 'Overview' },
+
+  // Sales
+  { to: '/billing', label: 'Sales & Billing', icon: '🧾', perm: 'sales.create', module: 'sales', group: 'Sales' },
+  { to: '/invoices', label: 'Invoices', icon: '📄', perm: 'sales.view', module: 'invoices', group: 'Sales' },
+  { to: '/customers', label: 'CRM — Customers', icon: '👥', perm: 'customers.view', module: 'crm', group: 'Sales' },
+  { to: '/labels', label: 'Label Printing', icon: '🏷️', perm: 'labels.view', module: 'labels', group: 'Sales' },
+
+  // Inventory / Catalog
+  { to: '/products', label: 'Products', icon: '📦', perm: 'products.view', module: 'products', group: 'Inventory' },
+  { to: '/categories', label: 'Categories', icon: '🗂️', perm: 'categories.view', module: 'products', group: 'Inventory' },
+  { to: '/purchases', label: 'Purchases', icon: '📥', perm: 'purchases.view', module: 'purchases', group: 'Inventory' },
+  { to: '/inventory', label: 'Inventory', icon: '🏬', perm: 'inventory.view', module: 'inventory', group: 'Inventory' },
+
+  // Finance
+  { to: '/accounts', label: 'Accounts', icon: '💰', perm: 'accounts.view', module: 'accounts', group: 'Finance' },
+  { to: '/reports', label: 'Reports', icon: '📈', perm: 'reports.view', module: 'reports', group: 'Finance' },
+
+  // People
+  { to: '/hr', label: 'HR & Staff', icon: '🧑💼', perm: 'hr.view', module: 'hr', group: 'People' },
+
+  // Operations
+  { to: '/tasks', label: 'Tasks', icon: '✅', perm: 'tasks.view', module: 'tasks', group: 'Operations' },
+  { to: '/operations', label: 'Operations', icon: '🚚', perm: 'operations.view', module: 'operations', group: 'Operations' },
+
+  // Marketing
+  { to: '/marketing', label: 'Marketing', icon: '📣', perm: 'marketing.view', module: 'marketing', group: 'Marketing' },
+  { to: '/notifications', label: 'Notifications', icon: '🔔', perm: 'settings.view', module: 'notifications', group: 'Marketing' },
+
+  // Intelligence
+  { to: '/ai', label: 'AI Assistant', icon: '🤖', perm: 'ai.view', module: 'ai', group: 'Intelligence' },
+
+  // Administration
+  { to: '/masters', label: 'Master Data', icon: '🗃️', perm: 'master.view', module: 'master', group: 'Administration' },
+  { to: '/branches', label: 'Branches', icon: '🏢', perm: 'branches.view', module: 'branches', group: 'Administration' },
+  { to: '/users', label: 'Users & Roles', icon: '🔐', perm: 'users.view', module: 'admin', group: 'Administration' },
+  { to: '/integrations', label: 'Integrations', icon: '🔗', perm: 'integrations.view', module: 'integrations', group: 'Administration' },
+  { to: '/modules', label: 'Modules', icon: '🧩', perm: 'settings.edit', module: 'settings', group: 'Administration' },
+  { to: '/license', label: 'Subscription', icon: '🔑', perm: 'license.manage', module: 'subscription', group: 'Administration' },
+  { to: '/settings', label: 'Settings', icon: '⚙️', perm: 'settings.view', module: 'settings', group: 'Administration' },
+  { to: '/license-admin', label: 'License Admin', icon: '🛡️', superadminOnly: true, platform: true, group: 'Administration' },
+  { to: '/platform', label: 'Platform', icon: '🌐', superadminOnly: true, platform: true, group: 'Administration' },
 ];
 
 const SYNC_LABEL = {
@@ -45,7 +72,7 @@ const SYNC_PILL_CLASS = {
 export default function Layout({ children }) {
   const { user, logout, isSuperAdmin, hasPermission } = useAuth();
   const { branches, activeBranch, setActiveBranch, canSwitchBranch } = useBranch();
-  const { isEnabled } = useModules();
+  const { isEnabled, registry } = useModules();
   const sync = useSync();
   const navigate = useNavigate();
   const location = useLocation();
@@ -53,12 +80,27 @@ export default function Layout({ children }) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [branchMenu, setBranchMenu] = useState(false);
 
-  const items = NAV.filter((n) => {
-    if (n.superadminOnly) return isSuperAdmin;
-    if (!hasPermission(n.perm)) return false;
-    if (n.module && !isEnabled(n.module)) return false;
-    return true;
-  });
+  const navModuleKeys = NAV.map((n) => n.module).filter(Boolean);
+  const visible = [
+    ...NAV.filter((n) => {
+      if (n.superadminOnly) return isSuperAdmin;
+      if (!hasPermission(n.perm)) return false;
+      if (n.module && !isEnabled(n.module)) return false;
+      return true;
+    }),
+    // Every other enabled module still gets a sidebar entry so users can see
+    // that the capability is switched on (dedicated screens arrive later).
+    ...registry
+      .filter((m) => !navModuleKeys.includes(m.key) && isEnabled(m.key))
+      .map((m) => ({ to: `/module/${m.key}`, label: m.label, icon: m.icon || '🧩', module: m.key, group: 'More', placeholder: true })),
+  ];
+
+  // Bucket the visible items into ordered professional sections.
+  const sections = [];
+  for (const g of [...GROUP_ORDER, 'More']) {
+    const groupItems = visible.filter((n) => (n.group || 'More') === g);
+    if (groupItems.length) sections.push({ group: g, items: groupItems });
+  }
 
   useEffect(() => {
     const onChange = () => setIsFullscreen(!!document.fullscreenElement);
@@ -90,16 +132,21 @@ export default function Layout({ children }) {
       <aside className={`sidebar ${menuOpen ? 'open' : ''}`}>
         <div className="brand">🛒 NiteshPro POS</div>
         <nav>
-          {items.map((n) => (
-            <NavLink
-              key={n.to}
-              to={n.to}
-              end={n.to === '/'}
-              className={({ isActive }) => (isActive ? 'active' : '')}
-              onClick={() => setMenuOpen(false)}
-            >
-              <span>{n.icon}</span> {n.label}
-            </NavLink>
+          {sections.map((section) => (
+            <div className="nav-group" key={section.group}>
+              <div className="nav-group-title">{section.group}</div>
+              {section.items.map((n) => (
+                <NavLink
+                  key={n.to}
+                  to={n.to}
+                  end={n.to === '/'}
+                  className={({ isActive }) => (isActive ? 'active' : '')}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  <span>{n.icon}</span> {n.label}
+                </NavLink>
+              ))}
+            </div>
           ))}
         </nav>
         <div className={`sync-pill ${SYNC_PILL_CLASS[sync.status] || 'offline'}`}>

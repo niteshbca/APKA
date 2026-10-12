@@ -15,45 +15,23 @@ import { useToast } from '../context/ToastContext';
 import { useSync } from '../context/SyncContext';
 import { useAuth } from '../context/AuthContext';
 import { useBranch } from '../context/BranchContext';
-import { Button, Card, Modal, Field, Badge } from '../components/ui';
+import { Button, Card, Modal, Field, Badge, EmptyState } from '../components/ui';
 import PaymentModal from '../components/Billing/PaymentModal';
 import InvoicePreview from '../components/Billing/InvoicePreview';
 import { printInvoice } from '../utils/print';
 import { waLink, mailtoLink, saleMessage, saleEmailSubject } from '../utils/notify';
 
-const CATEGORIES = [
-  { id: 'all', name: 'All' },
-  { id: 'beverages', name: 'Beverages' },
-  { id: 'grocery', name: 'Grocery' },
-  { id: 'snacks', name: 'Snacks' },
-  { id: 'dairy', name: 'Dairy' },
-  { id: 'personal-care', name: 'Personal Care' },
-  { id: 'household', name: 'Household' },
-];
-
-function formatCategoryName(cat) {
-  if (!cat) return 'Uncategorized';
-  const map = {
-    beverages: 'Beverages',
-    grocery: 'Grocery',
-    snacks: 'Snacks',
-    dairy: 'Dairy',
-    'personal-care': 'Personal Care',
-    household: 'Household',
-  };
-  return map[cat.toLowerCase()] || cat;
-}
+const CATEGORY_PLACEHOLDERS = {
+  beverages: '🥤',
+  grocery: '🛒',
+  snacks: '🍿',
+  dairy: '🥛',
+  'personal-care': '🧴',
+  household: '🧹',
+};
 
 function getPlaceholderImage(category) {
-  const placeholders = {
-    beverages: '🥤',
-    grocery: '🛒',
-    snacks: '🍿',
-    dairy: '🥛',
-    'personal-care': '🧴',
-    household: '🧹',
-  };
-  return placeholders[category?.toLowerCase()] || '📦';
+  return CATEGORY_PLACEHOLDERS[category?.toLowerCase()] || '📦';
 }
 
 export default function Billing() {
@@ -72,8 +50,13 @@ export default function Billing() {
   const [showPayment, setShowPayment] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [preview, setPreview] = useState(null);
+  const [heldBills, setHeldBills] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('pos_held_bills')) || []; } catch { return []; }
+  });
+  const [showHeld, setShowHeld] = useState(false);
   const [settings, setSettings] = useState({});
   const [activeCategory, setActiveCategory] = useState('all');
+  const [quickPaid, setQuickPaid] = useState('');
   const [scanInput, setScanInput] = useState('');
   const [recentItems, setRecentItems] = useState([]);
   const [showRecent, setShowRecent] = useState(false);
@@ -152,11 +135,19 @@ export default function Billing() {
     return () => clearInterval(iv);
   }, [loadProducts, loadCategories, loadCustomers, loadSettings]);
 
+  const categoryTabs = useMemo(
+    () => [{ id: 'all', name: 'All' }, ...categories.map((c) => ({ id: c._id, name: c.name }))],
+    [categories]
+  );
+
   const filtered = useMemo(() => {
     let result = products.filter(p => p.active !== false);
     if (activeCategory !== 'all') {
-      const catName = formatCategoryName(activeCategory).toLowerCase();
-      result = result.filter(p => (p.categoryName || '').toLowerCase() === catName);
+      const cat = categories.find((c) => c._id === activeCategory);
+      const catName = (cat?.name || '').toLowerCase();
+      result = result.filter(
+        (p) => p.category === activeCategory || (catName && (p.categoryName || '').toLowerCase() === catName)
+      );
     }
     const q = query.trim().toLowerCase();
     if (q) {
@@ -168,7 +159,7 @@ export default function Billing() {
       );
     }
     return result.slice(0, 60);
-  }, [products, query, activeCategory]);
+  }, [products, query, activeCategory, categories]);
 
   const handleScan = useCallback(
     (code) => {
@@ -373,6 +364,7 @@ export default function Billing() {
       }
       setCart([]);
       setDiscount('');
+      setQuickPaid('');
       setCustomer(null);
       setQuery('');
       setShowPayment(false);
@@ -397,6 +389,7 @@ export default function Billing() {
           setPreview({ invoice: invoiceRecord, invoiceNo: result.invoice.invoiceNo, synced: false });
           setCart([]);
           setDiscount('');
+          setQuickPaid('');
           setCustomer(null);
           setQuery('');
           setShowPayment(false);
@@ -443,33 +436,76 @@ export default function Billing() {
   const newBill = () => {
     setCart([]);
     setDiscount('');
+    setQuickPaid('');
     setCustomer(null);
     setQuery('');
     searchRef.current?.focus();
   };
 
-  const holdBill = () => {
-    if (cart.length === 0) {
-      toast('Cart is empty', 'error');
-      return;
-    }
-    toast('Bill held (feature coming soon)', 'info');
+  const persistHeld = (list) => {
+    setHeldBills(list);
+    localStorage.setItem('pos_held_bills', JSON.stringify(list));
   };
 
-  const parkBill = () => {
+  const holdBill = (kind = 'hold') => {
     if (cart.length === 0) {
       toast('Cart is empty', 'error');
       return;
     }
-    toast('Bill parked (feature coming soon)', 'info');
+    const entry = {
+      id: `${kind[0].toUpperCase()}${Date.now()}`,
+      kind,
+      at: new Date().toISOString(),
+      customer: customer ? { _id: customer._id || customer.id, name: customer.name, mobile: customer.mobile } : null,
+      cart,
+      discount,
+    };
+    persistHeld([entry, ...heldBills]);
+    setCart([]);
+    setDiscount('');
+    setQuickPaid('');
+    setCustomer(null);
+    setQuery('');
+    toast(kind === 'park' ? 'Bill parked' : 'Bill held', 'success');
   };
+
+  const parkBill = () => holdBill('park');
+
+  const resumeBill = (entry) => {
+    setCart(entry.cart || []);
+    setDiscount(entry.discount || '');
+    if (entry.customer) {
+      const found = customers.find((c) => (c._id || c.id) === entry.customer._id);
+      setCustomer(found || entry.customer);
+    }
+    persistHeld(heldBills.filter((b) => b.id !== entry.id));
+    setShowHeld(false);
+    toast('Bill resumed', 'success');
+  };
+
+  const deleteHeld = (id) => persistHeld(heldBills.filter((b) => b.id !== id));
 
   const printBill = () => {
     if (cart.length === 0) {
       toast('Cart is empty', 'error');
       return;
     }
-    toast('Print preview (feature coming soon)', 'info');
+    const invoice = {
+      invoiceNo: 'PREVIEW',
+      customerSnapshot: customer
+        ? { name: customer.name, mobile: customer.mobile, email: customer.email, gstNumber: customer.gstNumber, address: customer.address }
+        : {},
+      items: cart.map((it) => ({ name: it.name, sku: it.sku, qty: it.qty, price: it.price, gstRate: it.gstRate, gstAmount: it.gstAmount, total: it.total })),
+      subtotal: totals.subtotal,
+      discount: totals.discount,
+      taxable: totals.taxable,
+      gstTotal: totals.gstTotal,
+      total: totals.total,
+      paymentMode: 'cash',
+      createdAt: new Date().toISOString(),
+      isPreBill: true,
+    };
+    setPreview({ invoice, invoiceNo: 'PREVIEW', synced: true });
   };
 
   const toggleFullscreen = async () => {
@@ -552,15 +588,18 @@ export default function Billing() {
           </div>
         </div>
         <div className="topbar-right">
-          <Button variant="ghost" size="sm" onClick={holdBill} title="F7 - Hold Bill">
+          <Button variant="ghost" size="sm" onClick={() => holdBill('hold')} title="F7 - Hold Bill">
             ⏸ Hold
           </Button>
           <Button variant="ghost" size="sm" onClick={parkBill} title="F8 - Park Bill">
             🅿 Park
           </Button>
-          <Button variant="ghost" size="sm" onClick={printBill} title="Print">
-            🖨 Print
-          </Button>
+          {heldBills.length > 0 && (
+            <Button variant="ghost" size="sm" onClick={() => setShowHeld(true)} title="Resume held / parked bills">
+              📂 Held ({heldBills.length})
+            </Button>
+          )}
+          <Button variant="ghost" size="sm" onClick={printBill} title="Print pre-bill">🖨 Print</Button>
           <Button variant="ghost" size="sm" onClick={toggleFullscreen} title="F11 - Fullscreen">
             {fullscreen ? '🡼 Exit' : '⛶ Full'}
           </Button>
@@ -672,11 +711,13 @@ export default function Billing() {
                   step="0.01"
                   className="paid-input"
                   placeholder="0.00"
+                  value={quickPaid}
+                  onChange={(e) => setQuickPaid(e.target.value)}
                 />
               </div>
               <div className="totals-row change-row">
                 <span>Change</span>
-                <span className="change-amount">₹0.00</span>
+                <span className="change-amount">{money(Math.max(0, (Number(quickPaid) || 0) - totals.total))}</span>
               </div>
             </div>
 
@@ -694,7 +735,7 @@ export default function Billing() {
         <main className="pos-right">
           <div className="products-card">
             <div className="category-tabs">
-              {CATEGORIES.map((cat) => (
+              {categoryTabs.map((cat) => (
                 <button
                   key={cat.id}
                   className={`cat-tab ${activeCategory === cat.id ? 'active' : ''}`}
@@ -901,6 +942,40 @@ export default function Billing() {
           </Modal>
         );
       })()}
+
+      {showHeld && (
+        <Modal open={showHeld} title="Held & Parked Bills" onClose={() => setShowHeld(false)} width={680}>
+          {heldBills.length === 0 ? (
+            <EmptyState icon="📂" title="No held bills" sub="Use Hold/Park to keep a bill aside and resume later." />
+          ) : (
+            <table className="table">
+              <thead>
+                <tr><th>Type</th><th>When</th><th>Customer</th><th>Items</th><th style={{ textAlign: 'right' }}>Total</th><th></th></tr>
+              </thead>
+              <tbody>
+                {heldBills.map((b) => {
+                  const t = (b.cart || []).reduce((s, i) => s + (i.total || 0), 0);
+                  return (
+                    <tr key={b.id}>
+                      <td><Badge tone={b.kind === 'park' ? 'warning' : 'info'}>{b.kind}</Badge></td>
+                      <td>{new Date(b.at).toLocaleString('en-IN')}</td>
+                      <td>{b.customer?.name || 'Walk-in'}</td>
+                      <td>{(b.cart || []).length}</td>
+                      <td style={{ textAlign: 'right', fontWeight: 600 }}>{money(t)}</td>
+                      <td>
+                        <div className="flex gap-8">
+                          <Button size="sm" variant="ghost" onClick={() => resumeBill(b)}>Resume</Button>
+                          <Button size="sm" variant="danger" onClick={() => deleteHeld(b.id)}>Del</Button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </Modal>
+      )}
 
       {preview && (
         <InvoicePreview

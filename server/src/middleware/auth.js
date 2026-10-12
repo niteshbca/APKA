@@ -45,7 +45,14 @@ async function buildContext(req) {
   let tenantId = null;
   let bypass = false;
 
-  if (user.isPlatformAdmin) {
+  // A platform administrator is either explicitly flagged OR holds the legacy
+  // top-level `superadmin` role. treating them consistently here matches every
+  // other guard (requirePermission/requireRoles already let superadmin through)
+  // and removes the "Platform administrator access required" dead-end for the
+  // original master account before it has been migrated.
+  const isPlatform = !!user.isPlatformAdmin || user.role === 'superadmin';
+
+  if (isPlatform) {
     // Platform admins may target a specific tenant via an explicit header.
     const requested = req.headers['x-tenant-id'] || req.query.tenantId;
     if (requested && mongoose.Types.ObjectId.isValid(String(requested))) {
@@ -75,7 +82,7 @@ async function buildContext(req) {
   }
 
   req.tenantId = tenantId;
-  req.isPlatformAdmin = !!user.isPlatformAdmin;
+  req.isPlatformAdmin = isPlatform;
   return { tenantId, bypass, user };
 }
 
@@ -110,7 +117,10 @@ async function attachUser(req, res, next) {
 
 function requirePermission(...perms) {
   return (req, res, next) => {
-    if (req.userRole === 'superadmin' || req.isPlatformAdmin) return next();
+    // Platform admins and tenant owners/admins have full access. The admin role
+    // template grants every permission; bypassing here also covers accounts whose
+    // stored permission array predates a newly added permission.
+    if (req.userRole === 'superadmin' || req.userRole === 'admin' || req.isPlatformAdmin) return next();
     const hasPerm = perms.some((p) => req.userPermissions.includes(p) || req.userPermissions.includes('*'));
     if (!hasPerm) {
       return res.status(403).json({ success: false, message: `Permission required: ${perms.join(' or ')}` });
@@ -130,7 +140,7 @@ function requireRoles(...roles) {
 }
 
 function requirePlatformAdmin(req, res, next) {
-  if (!req.isPlatformAdmin) {
+  if (!req.isPlatformAdmin && req.userRole !== 'superadmin') {
     return res.status(403).json({ success: false, message: 'Platform administrator access required' });
   }
   next();

@@ -3,23 +3,43 @@ import api from '../api/axios';
 import { money } from '../utils/format';
 import { useBranch } from '../context/BranchContext';
 import { useAuth } from '../context/AuthContext';
-import { StatCard, Spinner, Card } from '../components/ui';
+import { StatCard, Spinner, Card, Button, EmptyState } from '../components/ui';
 
 export default function Dashboard() {
   const [data, setData] = useState(null);
+  const [error, setError] = useState(null);
   const { activeBranch } = useBranch();
   const { isSuperAdmin } = useAuth();
 
-  useEffect(() => {
+  const load = () => {
     const params = {};
     if (isSuperAdmin && activeBranch?._id) params.branch = activeBranch._id;
     setData(null);
-    api.get('/dashboard', { params }).then((r) => setData(r.data.data)).catch(() => {});
-  }, [activeBranch, isSuperAdmin]);
+    setError(null);
+    api.get('/dashboard', { params })
+      .then((r) => setData(r.data.data))
+      .catch((e) => setError(e.message || 'Could not load the dashboard'));
+  };
+
+  useEffect(() => { load(); }, [activeBranch, isSuperAdmin]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (error) {
+    return (
+      <div>
+        <h2 className="mb-16">Dashboard</h2>
+        <Card>
+          <EmptyState icon="📡" title="Could not load the dashboard" sub={error} />
+          <div className="flex" style={{ justifyContent: 'center' }}>
+            <Button onClick={load}>Retry</Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   if (!data) return <Spinner />;
 
-  const { today, totals, productCount, lowStockCount, lowStockProducts, customerCount, trend = [], topProducts = [], paymentSplit = {}, branchStats = [] } = data;
+  const { today, totals, productCount, lowStockCount, lowStockProducts = [], customerCount, trend = [], topProducts = [], paymentSplit = {}, branchStats = [] } = data;
 
   const maxTrend = Math.max(1, ...trend.map((t) => t.sales));
   const payTotal = (paymentSplit.cash || 0) + (paymentSplit.upi || 0) + (paymentSplit.card || 0) || 1;
