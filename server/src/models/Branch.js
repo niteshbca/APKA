@@ -1,10 +1,11 @@
 const mongoose = require('mongoose');
+const tenantPlugin = require('../plugins/tenantPlugin');
 
 const branchSchema = new mongoose.Schema(
   {
     clientId: { type: String, unique: true, sparse: true, index: true },
     name: { type: String, required: true, trim: true },
-    code: { type: String, required: true, unique: true, trim: true, uppercase: true },
+    code: { type: String, required: true, trim: true, uppercase: true },
     address: { type: String, trim: true },
     phone: { type: String, trim: true },
     email: { type: String, trim: true },
@@ -28,5 +29,8 @@ branchSchema.pre('save', function (next) {
   }
   next();
 });
+
+branchSchema.index({ tenant: 1, code: 1 }, { unique: true });
+branchSchema.plugin(tenantPlugin);
 
 module.exports = mongoose.model('Branch', branchSchema);

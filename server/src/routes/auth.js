@@ -21,7 +21,14 @@ router.post('/login', async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
     const token = jwt.sign(
-      { sub: user._id.toString(), role: user.role, branch: user.branch, permissions: user.permissions },
+      {
+        sub: user._id.toString(),
+        role: user.role,
+        branch: user.branch,
+        tenant: user.tenant || null,
+        isPlatformAdmin: !!user.isPlatformAdmin,
+        permissions: user.permissions,
+      },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
@@ -85,7 +92,14 @@ router.post('/login-pin', async (req, res, next) => {
     await matchedUser.save();
     
     const token = jwt.sign(
-      { sub: matchedUser._id.toString(), role: matchedUser.role, branch: matchedUser.branch, permissions: matchedUser.permissions },
+      {
+        sub: matchedUser._id.toString(),
+        role: matchedUser.role,
+        branch: matchedUser.branch,
+        tenant: matchedUser.tenant || null,
+        isPlatformAdmin: !!matchedUser.isPlatformAdmin,
+        permissions: matchedUser.permissions,
+      },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );

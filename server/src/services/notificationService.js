@@ -11,6 +11,23 @@ function inr(n) {
   return '₹' + v.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+/**
+ * Turns any thrown value into a human-readable reason. Some low-level socket
+ * errors carry an empty `message` but a useful `code` (e.g. ECONNRESET), so we
+ * always fall back to `code`/`String(err)` instead of returning "".
+ */
+function describeError(err) {
+  if (!err) return 'unknown error';
+  if (typeof err === 'string') return err;
+  const parts = [];
+  if (err.message) parts.push(String(err.message));
+  else if (err.code) parts.push(String(err.code));
+  if (err.code && err.message && !String(err.message).includes(err.code)) parts.push(`(${err.code})`);
+  if (err.errno && err.errno !== err.code) parts.push(`errno ${err.errno}`);
+  const out = parts.join(' ').trim();
+  return out || String(err) || 'unknown error';
+}
+
 function normalizePhone(raw, defaultCountry = '91') {
   if (!raw) return '';
   let digits = String(raw).replace(/[^\d+]/g, '');
@@ -133,7 +150,9 @@ async function sendEmail(settings, { to, subject, bodyText, vars }) {
     });
     return { status: 'sent' };
   } catch (err) {
-    return { status: 'failed', error: err.message };
+    const reason = describeError(err);
+    console.error('[notify] email send failed:', reason, '| host:', email.host, '| user:', email.user);
+    return { status: 'failed', error: reason };
   }
 }
 
@@ -200,7 +219,9 @@ async function sendWhatsapp(settings, { to, message }) {
     if (!res.ok) throw new Error(text || `WhatsApp API ${res.status}`);
     return { status: 'sent', meta: text.slice(0, 500) };
   } catch (err) {
-    return { status: 'failed', error: err.message };
+    const reason = describeError(err);
+    console.error('[notify] whatsapp send failed:', reason, '| provider:', provider);
+    return { status: 'failed', error: reason };
   }
 }
 
@@ -388,7 +409,8 @@ async function sendInvoiceNow(branchId, { channel = 'both', email, phone, invoic
 
     return { results };
   } catch (err) {
-    return { results, error: err.message };
+    console.error('[notify] sendInvoiceNow failed:', describeError(err));
+    return { results, error: describeError(err) };
   }
 }
 

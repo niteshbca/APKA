@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const tenantPlugin = require('../plugins/tenantPlugin');
 
 const invoiceItemSchema = new mongoose.Schema(
   {
@@ -17,7 +18,7 @@ const invoiceItemSchema = new mongoose.Schema(
 
 const invoiceSchema = new mongoose.Schema(
   {
-    invoiceNo: { type: String, required: true, unique: true, trim: true },
+    invoiceNo: { type: String, required: true, trim: true },
     clientSaleId: { type: String, unique: true, sparse: true },
     sale: { type: mongoose.Schema.Types.ObjectId, ref: 'Sale' },
     businessName: { type: String, trim: true },
@@ -47,5 +48,7 @@ const invoiceSchema = new mongoose.Schema(
 
 invoiceSchema.index({ createdAt: -1 });
 invoiceSchema.index({ paymentMode: 1, createdAt: -1 });
+invoiceSchema.index({ tenant: 1, invoiceNo: 1 }, { unique: true });
+invoiceSchema.plugin(tenantPlugin);
 
 module.exports = mongoose.model('Invoice', invoiceSchema);

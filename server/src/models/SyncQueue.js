@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const tenantPlugin = require('../plugins/tenantPlugin');
 
 const syncQueueSchema = new mongoose.Schema(
   {
@@ -17,5 +18,7 @@ const syncQueueSchema = new mongoose.Schema(
 );
 
 syncQueueSchema.index({ status: 1, createdAt: 1 });
+syncQueueSchema.index({ tenant: 1, clientOpId: 1 });
+syncQueueSchema.plugin(tenantPlugin);
 
 module.exports = mongoose.model('SyncQueue', syncQueueSchema);

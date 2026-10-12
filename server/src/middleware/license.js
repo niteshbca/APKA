@@ -1,18 +1,54 @@
 const License = require('../models/License');
 
 /**
- * Server-side license enforcement for protected business routes.
- * - If DEFAULT_LICENSE_ID is set, that specific license must be valid.
- * - Otherwise at least one active, non-expired license must exist.
- * This is the "backend/local application architecture" anti-bypass layer:
- * even if the client is tampered with, the server refuses to persist sales
- * when the license is missing/expired/suspended.
+ * Server-side license / subscription enforcement for protected business routes.
+ *
+ * Two complementary mechanisms, chosen per tenant:
+ *   1. Legacy signed-license system — if the tenant already has License
+ *      documents, the original behaviour is preserved exactly: at least one
+ *      active, non-expired License must exist (DEFAULT_LICENSE_ID may pin one).
+ *   2. Tenant subscription lifecycle — tenants onboarded through SaaS signup
+ *      (no signed License docs) are gated on their subscription: an active
+ *      trial (not past trial end) or an active paid plan may transact.
+ *
+ * License queries are automatically scoped to the current tenant by the shared
+ * tenant plugin, so one tenant's license can never authorise another tenant.
  */
 async function licenseGuard(req, res, next) {
   try {
     const now = new Date();
-    let license = null;
 
+    // Does this tenant use the legacy signed-license system?
+    const legacyCount = await License.countDocuments({});
+
+    if (legacyCount === 0) {
+      const tenant = req.tenantDoc;
+      if (tenant && !req.isPlatformAdmin) {
+        if (tenant.status === 'trial') {
+          if (tenant.trialEndsAt && new Date(tenant.trialEndsAt) < now) {
+            return res.status(403).json({
+              success: false,
+              code: 'TRIAL_EXPIRED',
+              message: 'Your trial has expired. Please subscribe to continue.',
+            });
+          }
+          req.license = { mode: 'trial', tenant };
+          return next();
+        }
+        if (tenant.status === 'active') {
+          req.license = { mode: 'subscription', tenant };
+          return next();
+        }
+        return res.status(403).json({
+          success: false,
+          code: 'SUBSCRIPTION_INACTIVE',
+          message: `Your subscription is ${tenant.status}. Please renew to continue.`,
+        });
+      }
+    }
+
+    // Legacy signed-license enforcement (tenant-scoped by the plugin).
+    let license = null;
     if (process.env.DEFAULT_LICENSE_ID) {
       license = await License.findOne({ licenseId: process.env.DEFAULT_LICENSE_ID });
       if (!license) {

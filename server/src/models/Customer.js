@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const tenantPlugin = require('../plugins/tenantPlugin');
 
 const customerSchema = new mongoose.Schema(
   {
@@ -15,6 +16,9 @@ const customerSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+customerSchema.index({ tenant: 1, mobile: 1 });
+customerSchema.plugin(tenantPlugin);
 
 customerSchema.methods.toSafeJSON = function () {
   return {

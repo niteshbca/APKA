@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const tenantPlugin = require('../plugins/tenantPlugin');
 
 /**
  * Per-branch notification configuration. Each branch can have its OWN email
@@ -8,7 +9,7 @@ const mongoose = require('mongoose');
  */
 const notificationSettingSchema = new mongoose.Schema(
   {
-    branch: { type: mongoose.Schema.Types.ObjectId, ref: 'Branch', unique: true, index: true },
+    branch: { type: mongoose.Schema.Types.ObjectId, ref: 'Branch', index: true },
 
     email: {
       enabled: { type: Boolean, default: false },
@@ -65,6 +66,9 @@ const notificationSettingSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+notificationSettingSchema.index({ tenant: 1, branch: 1 }, { unique: true });
+notificationSettingSchema.plugin(tenantPlugin);
 
 function mask(secret) {
   if (!secret) return '';

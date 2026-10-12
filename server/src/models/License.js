@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const tenantPlugin = require('../plugins/tenantPlugin');
 
 const licenseSchema = new mongoose.Schema(
   {
@@ -20,5 +21,6 @@ const licenseSchema = new mongoose.Schema(
 
 licenseSchema.index({ status: 1 });
 licenseSchema.index({ expiryDate: 1 });
+licenseSchema.plugin(tenantPlugin);
 
 module.exports = mongoose.model('License', licenseSchema);

@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const tenantPlugin = require('../plugins/tenantPlugin');
 
 const deviceSchema = new mongoose.Schema(
   {
@@ -12,5 +13,6 @@ const deviceSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+deviceSchema.plugin(tenantPlugin);
 
 module.exports = mongoose.model('Device', deviceSchema);

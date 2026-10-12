@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const tenantPlugin = require('../plugins/tenantPlugin');
 
 const stockTransactionSchema = new mongoose.Schema(
   {
@@ -23,5 +24,6 @@ const stockTransactionSchema = new mongoose.Schema(
 
 stockTransactionSchema.index({ createdAt: -1 });
 stockTransactionSchema.index({ product: 1, createdAt: -1 });
+stockTransactionSchema.plugin(tenantPlugin);
 
 module.exports = mongoose.model('StockTransaction', stockTransactionSchema);

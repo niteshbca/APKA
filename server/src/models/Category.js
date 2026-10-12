@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const tenantPlugin = require('../plugins/tenantPlugin');
 
 const categorySchema = new mongoose.Schema(
   {
@@ -13,8 +14,9 @@ const categorySchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-categorySchema.index({ branch: 1, name: 1 }, { unique: true });
-categorySchema.index({ branch: 1, slug: 1 }, { unique: true, sparse: true });
+categorySchema.index({ tenant: 1, branch: 1, name: 1 }, { unique: true });
+categorySchema.index({ tenant: 1, branch: 1, slug: 1 }, { unique: true, sparse: true });
+categorySchema.plugin(tenantPlugin);
 
 categorySchema.pre('save', function (next) {
   if (!this.slug) {

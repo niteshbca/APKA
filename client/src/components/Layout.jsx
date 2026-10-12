@@ -3,23 +3,27 @@ import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useSync } from '../context/SyncContext';
 import { useBranch } from '../context/BranchContext';
+import { useModules } from '../context/ModulesContext';
 
 const NAV = [
-  { to: '/', label: 'Dashboard', icon: '📊', perm: 'dashboard.view' },
-  { to: '/billing', label: 'Billing', icon: '🧾', perm: 'sales.create' },
-  { to: '/products', label: 'Products', icon: '📦', perm: 'products.view' },
-  { to: '/categories', label: 'Categories', icon: '🗂️', perm: 'categories.view' },
-  { to: '/customers', label: 'Customers', icon: '👥', perm: 'customers.view' },
-  { to: '/purchases', label: 'Purchases', icon: '📥', perm: 'purchases.view' },
-  { to: '/inventory', label: 'Inventory', icon: '🏬', perm: 'inventory.view' },
-  { to: '/invoices', label: 'Invoices', icon: '📄', perm: 'sales.view' },
-  { to: '/reports', label: 'Reports', icon: '📈', perm: 'reports.view' },
-  { to: '/branches', label: 'Branches', icon: '🏬', perm: 'branches.view' },
-  { to: '/users', label: 'Users', icon: '🔐', perm: 'users.view' },
-  { to: '/license', label: 'License', icon: '🔑', perm: 'license.manage' },
-  { to: '/license-admin', label: 'License Admin', icon: '🛡️', superadminOnly: true },
-  { to: '/notifications', label: 'Notifications', icon: '🔔', perm: 'settings.view' },
-  { to: '/settings', label: 'Settings', icon: '⚙️', perm: 'settings.view' },
+  { to: '/', label: 'Dashboard', icon: '📊', perm: 'dashboard.view', module: 'dashboard' },
+  { to: '/billing', label: 'Billing', icon: '🧾', perm: 'sales.create', module: 'sales' },
+  { to: '/products', label: 'Products', icon: '📦', perm: 'products.view', module: 'products' },
+  { to: '/categories', label: 'Categories', icon: '🗂️', perm: 'categories.view', module: 'products' },
+  { to: '/customers', label: 'Customers', icon: '👥', perm: 'customers.view', module: 'crm' },
+  { to: '/purchases', label: 'Purchases', icon: '📥', perm: 'purchases.view', module: 'purchases' },
+  { to: '/inventory', label: 'Inventory', icon: '🏬', perm: 'inventory.view', module: 'inventory' },
+  { to: '/invoices', label: 'Invoices', icon: '📄', perm: 'sales.view', module: 'invoices' },
+  { to: '/labels', label: 'Label Printing', icon: '🏷️', perm: 'labels.view', module: 'labels' },
+  { to: '/reports', label: 'Reports', icon: '📈', perm: 'reports.view', module: 'reports' },
+  { to: '/branches', label: 'Branches', icon: '🏢', perm: 'branches.view', module: 'branches' },
+  { to: '/users', label: 'Users', icon: '🔐', perm: 'users.view', module: 'admin' },
+  { to: '/modules', label: 'Modules', icon: '🧩', perm: 'settings.edit', module: 'settings' },
+  { to: '/license', label: 'License', icon: '🔑', perm: 'license.manage', module: 'subscription' },
+  { to: '/notifications', label: 'Notifications', icon: '🔔', perm: 'settings.view', module: 'notifications' },
+  { to: '/settings', label: 'Settings', icon: '⚙️', perm: 'settings.view', module: 'settings' },
+  { to: '/license-admin', label: 'License Admin', icon: '🛡️', superadminOnly: true, platform: true },
+  { to: '/platform', label: 'Platform', icon: '🌐', superadminOnly: true, platform: true },
 ];
 
 const SYNC_LABEL = {
@@ -41,6 +45,7 @@ const SYNC_PILL_CLASS = {
 export default function Layout({ children }) {
   const { user, logout, isSuperAdmin, hasPermission } = useAuth();
   const { branches, activeBranch, setActiveBranch, canSwitchBranch } = useBranch();
+  const { isEnabled } = useModules();
   const sync = useSync();
   const navigate = useNavigate();
   const location = useLocation();
@@ -50,7 +55,9 @@ export default function Layout({ children }) {
 
   const items = NAV.filter((n) => {
     if (n.superadminOnly) return isSuperAdmin;
-    return n.perm ? hasPermission(n.perm) : true;
+    if (!hasPermission(n.perm)) return false;
+    if (n.module && !isEnabled(n.module)) return false;
+    return true;
   });
 
   useEffect(() => {

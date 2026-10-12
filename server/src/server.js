@@ -26,6 +26,11 @@ const syncRoutes = require('./routes/sync');
 const settingRoutes = require('./routes/settings');
 const notificationRoutes = require('./routes/notifications');
 const cloudSyncRoutes = require('./routes/cloudSync');
+const tenantRoutes = require('./routes/tenants');
+const moduleRoutes = require('./routes/modules');
+const labelRoutes = require('./routes/labels');
+const masterRoutes = require('./routes/masters');
+const supplierRoutes = require('./routes/suppliers');
 const cloudSyncWorker = require('./services/cloudSyncWorker');
 const keyService = require('./services/keyService');
 const licenseService = require('./services/licenseService');
@@ -70,6 +75,11 @@ app.use('/api/sync', syncRoutes);
 app.use('/api/settings', settingRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/cloud', cloudSyncRoutes);
+app.use('/api/tenants', tenantRoutes);
+app.use('/api/modules', moduleRoutes);
+app.use('/api/labels', labelRoutes);
+app.use('/api/masters', masterRoutes);
+app.use('/api/suppliers', supplierRoutes);
 
 // Desktop installer download (served from server/public/installer).
 const INSTALLER_DIR = path.join(__dirname, '..', 'public', 'installer');

@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { BranchProvider } from './context/BranchContext';
 import { SyncProvider } from './context/SyncContext';
 import { ToastProvider } from './context/ToastContext';
+import { ModulesProvider, useModules } from './context/ModulesContext';
 import LicenseGate from './components/LicenseGate';
 import Layout from './components/Layout';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -25,6 +26,9 @@ import LicensePage from './pages/LicensePage';
 import LicenseAdmin from './pages/LicenseAdmin';
 import Settings from './pages/Settings';
 import Notifications from './pages/Notifications';
+import LabelPrinting from './pages/LabelPrinting';
+import Modules from './pages/Modules';
+import PlatformAdmin from './pages/PlatformAdmin';
 
 function Protected({ children }) {
   const { ready } = useAuth();
@@ -41,6 +45,11 @@ function PermRoute({ perm, superadminOnly, children }) {
   return <Navigate to="/" replace />;
 }
 
+function ModuleRoute({ module, children }) {
+  const { isEnabled } = useModules();
+  return isEnabled(module) ? children : <Navigate to="/" replace />;
+}
+
 function AppRoutes() {
   const location = useLocation();
   return (
@@ -52,32 +61,37 @@ function AppRoutes() {
         element={
           <Protected>
             <LicenseGate>
-              <BranchProvider>
-                <SyncProvider>
-                  <Layout>
-                    <ErrorBoundary key={location.pathname}>
-                      <Routes>
-                        <Route path="/" element={<Dashboard />} />
-                        <Route path="/billing" element={<Billing />} />
-                        <Route path="/products" element={<PermRoute perm="products.view"><Products /></PermRoute>} />
-                        <Route path="/categories" element={<PermRoute perm="categories.view"><Categories /></PermRoute>} />
-                        <Route path="/customers" element={<PermRoute perm="customers.view"><Customers /></PermRoute>} />
-                        <Route path="/purchases" element={<PermRoute perm="purchases.view"><Purchases /></PermRoute>} />
-                        <Route path="/inventory" element={<PermRoute perm="inventory.view"><Inventory /></PermRoute>} />
-                        <Route path="/invoices" element={<PermRoute perm="sales.view"><Invoices /></PermRoute>} />
-                        <Route path="/reports" element={<PermRoute perm="reports.view"><Reports /></PermRoute>} />
-                        <Route path="/branches" element={<PermRoute perm="branches.view"><Branches /></PermRoute>} />
-                        <Route path="/users" element={<PermRoute perm="users.view"><Users /></PermRoute>} />
-                        <Route path="/license" element={<PermRoute perm="license.manage"><LicensePage /></PermRoute>} />
-                        <Route path="/license-admin" element={<PermRoute superadminOnly><LicenseAdmin /></PermRoute>} />
-                        <Route path="/settings" element={<PermRoute perm="settings.view"><Settings /></PermRoute>} />
-                        <Route path="/notifications" element={<PermRoute perm="settings.view"><Notifications /></PermRoute>} />
-                        <Route path="*" element={<Navigate to="/" replace />} />
-                      </Routes>
-                    </ErrorBoundary>
-                  </Layout>
-                </SyncProvider>
-              </BranchProvider>
+              <ModulesProvider>
+                <BranchProvider>
+                  <SyncProvider>
+                    <Layout>
+                      <ErrorBoundary key={location.pathname}>
+                        <Routes>
+                          <Route path="/" element={<Dashboard />} />
+                          <Route path="/billing" element={<Billing />} />
+                          <Route path="/products" element={<PermRoute perm="products.view"><Products /></PermRoute>} />
+                          <Route path="/categories" element={<PermRoute perm="categories.view"><Categories /></PermRoute>} />
+                          <Route path="/customers" element={<PermRoute perm="customers.view"><Customers /></PermRoute>} />
+                          <Route path="/purchases" element={<PermRoute perm="purchases.view"><Purchases /></PermRoute>} />
+                          <Route path="/inventory" element={<PermRoute perm="inventory.view"><Inventory /></PermRoute>} />
+                          <Route path="/invoices" element={<PermRoute perm="sales.view"><Invoices /></PermRoute>} />
+                          <Route path="/labels" element={<ModuleRoute module="labels"><PermRoute perm="labels.view"><LabelPrinting /></PermRoute></ModuleRoute>} />
+                          <Route path="/reports" element={<PermRoute perm="reports.view"><Reports /></PermRoute>} />
+                          <Route path="/branches" element={<PermRoute perm="branches.view"><Branches /></PermRoute>} />
+                          <Route path="/users" element={<PermRoute perm="users.view"><Users /></PermRoute>} />
+                          <Route path="/modules" element={<PermRoute perm="settings.edit"><Modules /></PermRoute>} />
+                          <Route path="/license" element={<PermRoute perm="license.manage"><LicensePage /></PermRoute>} />
+                          <Route path="/license-admin" element={<PermRoute superadminOnly><LicenseAdmin /></PermRoute>} />
+                          <Route path="/platform" element={<PermRoute superadminOnly><PlatformAdmin /></PermRoute>} />
+                          <Route path="/settings" element={<PermRoute perm="settings.view"><Settings /></PermRoute>} />
+                          <Route path="/notifications" element={<PermRoute perm="settings.view"><Notifications /></PermRoute>} />
+                          <Route path="*" element={<Navigate to="/" replace />} />
+                        </Routes>
+                      </ErrorBoundary>
+                    </Layout>
+                  </SyncProvider>
+                </BranchProvider>
+              </ModulesProvider>
             </LicenseGate>
           </Protected>
         }

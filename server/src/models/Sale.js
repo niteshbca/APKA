@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const tenantPlugin = require('../plugins/tenantPlugin');
 
 const saleItemSchema = new mongoose.Schema(
   {
@@ -20,7 +21,7 @@ const saleItemSchema = new mongoose.Schema(
 
 const saleSchema = new mongoose.Schema(
   {
-    invoiceNo: { type: String, required: true, unique: true, trim: true },
+    invoiceNo: { type: String, required: true, trim: true },
     clientSaleId: { type: String, unique: true, sparse: true },
     branch: { type: mongoose.Schema.Types.ObjectId, ref: 'Branch', index: true },
     clientDeviceId: { type: String, index: true },
@@ -53,5 +54,7 @@ const saleSchema = new mongoose.Schema(
 
 saleSchema.index({ createdAt: -1 });
 saleSchema.index({ paymentMode: 1, createdAt: -1 });
+saleSchema.index({ tenant: 1, invoiceNo: 1 }, { unique: true });
+saleSchema.plugin(tenantPlugin);
 
 module.exports = mongoose.model('Sale', saleSchema);

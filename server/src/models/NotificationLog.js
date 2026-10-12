@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const tenantPlugin = require('../plugins/tenantPlugin');
 
 /**
  * Audit trail of every customer notification (email / WhatsApp) triggered by a
@@ -22,5 +23,6 @@ const notificationLogSchema = new mongoose.Schema(
 );
 
 notificationLogSchema.index({ createdAt: -1 });
+notificationLogSchema.plugin(tenantPlugin);
 
 module.exports = mongoose.model('NotificationLog', notificationLogSchema);

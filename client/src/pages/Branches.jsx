@@ -32,6 +32,7 @@ export default function Branches() {
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState(EMPTY);
   const [editingId, setEditingId] = useState(null);
+  const [notifMeta, setNotifMeta] = useState({ hasPassword: false, hasAccessToken: false });
   const { toast } = useToast();
   const { refresh } = useBranch();
 
@@ -44,11 +45,13 @@ export default function Branches() {
   const openAdd = () => {
     setEditingId(null);
     setForm(EMPTY);
+    setNotifMeta({ hasPassword: false, hasAccessToken: false });
     setShowModal(true);
   };
 
   const openEdit = async (b) => {
     setEditingId(b._id);
+    setNotifMeta({ hasPassword: false, hasAccessToken: false });
     setForm({
       name: b.name || '',
       code: b.code || '',
@@ -69,6 +72,7 @@ export default function Branches() {
       const r = await api.get('/notifications/settings', { params: { branch: b._id } });
       const s = r.data.data;
       if (s) {
+        setNotifMeta({ hasPassword: !!s.email?.hasPassword, hasAccessToken: !!s.whatsapp?.hasAccessToken });
         setForm((f) => ({
           ...f,
           notifications: {
@@ -228,7 +232,12 @@ export default function Branches() {
             </div>
             <div className="form-row">
               <Field label="Email / Username"><input className="input" value={n.email.user} onChange={setNotif('email', 'user')} placeholder="shop@gmail.com" /></Field>
-              <Field label="App Password"><input className="input" type="password" value={n.email.password} onChange={setNotif('email', 'password')} placeholder="16-char app password" /></Field>
+              <Field label="App Password"><input className="input" type="password" value={n.email.password} onChange={setNotif('email', 'password')} placeholder={notifMeta.hasPassword ? '•••••• (saved — leave blank to keep)' : '16-char app password'} /></Field>
+            </div>
+            <div className="muted small" style={{ marginTop: -4, marginBottom: 8 }}>
+              {notifMeta.hasPassword
+                ? 'App password pehle se saved hai. Badalna ho tabhi naya type karein.'
+                : 'Gmail ke liye Google Account → Security → App passwords se 16-character password banayein (normal password kaam nahi karega).'}
             </div>
             <div className="form-row">
               <Field label="From Name"><input className="input" value={n.email.fromName} onChange={setNotif('email', 'fromName')} placeholder="My Store" /></Field>
@@ -256,7 +265,7 @@ export default function Branches() {
               <Field label="Sender / From Number"><input className="input" value={n.whatsapp.senderNumber} onChange={setNotif('whatsapp', 'senderNumber')} placeholder="+91..." /></Field>
             </div>
             <Field label="API URL (generic / ultramsg)"><input className="input" value={n.whatsapp.apiUrl} onChange={setNotif('whatsapp', 'apiUrl')} placeholder="https://api.example.com/send" /></Field>
-            <Field label="Access Token / API Key"><input className="input" type="password" value={n.whatsapp.accessToken} onChange={setNotif('whatsapp', 'accessToken')} /></Field>
+            <Field label="Access Token / API Key"><input className="input" type="password" value={n.whatsapp.accessToken} onChange={setNotif('whatsapp', 'accessToken')} placeholder={notifMeta.hasAccessToken ? '•••••• (saved — leave blank to keep)' : ''} /></Field>
             <div className="form-row">
               <Field label="Instance ID (ultramsg)"><input className="input" value={n.whatsapp.instanceId} onChange={setNotif('whatsapp', 'instanceId')} /></Field>
               <Field label="Phone Number ID (meta)"><input className="input" value={n.whatsapp.phoneNumberId} onChange={setNotif('whatsapp', 'phoneNumberId')} /></Field>

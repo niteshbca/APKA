@@ -11,7 +11,9 @@
     "keys": "node scripts/generateKeys.js",
     "seed": "node scripts/seedAdmin.js",
     "seed:data": "node scripts/seedData.js",
-    "license": "node scripts/licenseAdmin.js"
+    "license": "node scripts/licenseAdmin.js",
+    "migrate:tenants": "node scripts/migrateTenants.js",
+    "test": "node --test"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -23,6 +25,7 @@
     "uuid": "^9.0.1"
   },
   "devDependencies": {
-    "nodemon": "^3.1.4"
+    "nodemon": "^3.1.4",
+    "supertest": "^7.3.1"
   }
 }

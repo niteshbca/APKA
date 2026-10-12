@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const tenantPlugin = require('../plugins/tenantPlugin');
 
 const purchaseSchema = new mongoose.Schema(
   {
@@ -22,5 +23,6 @@ const purchaseSchema = new mongoose.Schema(
 );
 
 purchaseSchema.index({ createdAt: -1 });
+purchaseSchema.plugin(tenantPlugin);
 
 module.exports = mongoose.model('Purchase', purchaseSchema);

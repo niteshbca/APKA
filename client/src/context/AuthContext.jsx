@@ -61,7 +61,7 @@ export function AuthProvider({ children }) {
 
   const hasPermission = useCallback((perm) => {
     if (!user) return false;
-    if (user.role === 'superadmin') return true;
+    if (user.role === 'superadmin' || user.isPlatformAdmin) return true;
     if (!perm) return true;
     const perms = user.permissions || [];
     if (perms.includes('*')) return true;
@@ -72,10 +72,12 @@ export function AuthProvider({ children }) {
   const isAdmin = !!user && ['admin', 'superadmin'].includes(user.role);
   const isSuperAdmin = !!user && user.role === 'superadmin';
   const isManager = !!user && ['admin', 'superadmin', 'manager'].includes(user.role);
+  const isPlatformAdmin = !!user && (user.isPlatformAdmin || user.role === 'superadmin');
 
   const value = {
     user,
     token,
+    tenant: user?.tenant || null,
     permissions,
     login,
     loginPin,
@@ -86,6 +88,7 @@ export function AuthProvider({ children }) {
     isAdmin,
     isSuperAdmin,
     isManager,
+    isPlatformAdmin,
     ready: !!token,
   };
 

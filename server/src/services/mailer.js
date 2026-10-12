@@ -30,6 +30,17 @@ function formatAddress(email, name) {
   return `"${String(name).replace(/"/g, "'")}" <${email}>`;
 }
 
+/**
+ * Gmail shows App Passwords as 4 space-separated groups ("abcd efgh ijkl
+ * mnop"), but SMTP AUTH needs them without spaces. Users paste them with the
+ * spaces, which makes Gmail reject the login. Strip whitespace for Gmail only.
+ */
+function cleanAppPassword(pass, host) {
+  let p = String(pass == null ? '' : pass).trim();
+  if (/gmail|googlemail/i.test(host || '')) p = p.replace(/\s+/g, '');
+  return p;
+}
+
 function findTerminator(buf) {
   let pos = 0;
   while (true) {
@@ -149,6 +160,7 @@ async function sendMail(opts) {
   if (!recipients.length) throw new Error('Recipient email is required');
   const fromEmail = from || user;
   if (!fromEmail) throw new Error('Sender email is required');
+  const cleanPass = cleanAppPassword(pass, host);
 
   let socket = secure
     ? tls.connect({ host, port, servername: host, rejectUnauthorized: false })
@@ -160,8 +172,9 @@ async function sendMail(opts) {
 
   const run = async () => {
     await new Promise((resolve, reject) => {
+      const onError = (e) => reject(new Error(e && (e.message || e.code) ? `SMTP connect failed: ${(e && (e.message || e.code))}` : 'SMTP connect failed'));
       socket.once(secure ? 'secureConnect' : 'connect', resolve);
-      socket.once('error', reject);
+      socket.once('error', onError);
       socket.on('error', () => { /* read-loop handles real errors */ });
       socket.setTimeout(timeout, () => reject(new Error('SMTP connection timeout')));
     });
@@ -182,8 +195,9 @@ async function sendMail(opts) {
       const plainSocket = socket;
       socket = tls.connect({ socket: plainSocket, servername: host, rejectUnauthorized: false });
       await new Promise((resolve, reject) => {
+        const onError = (e) => reject(new Error(e && (e.message || e.code) ? `SMTP TLS handshake failed: ${(e && (e.message || e.code))}` : 'SMTP TLS handshake failed'));
         socket.once('secureConnect', resolve);
-        socket.once('error', reject);
+        socket.once('error', onError);
         socket.on('error', () => { /* handled by read-loop */ });
       });
       reader = responseIterator(socket);
@@ -192,8 +206,8 @@ async function sendMail(opts) {
       if (r.code !== 250) throw new Error(`EHLO (TLS) failed: ${r.text}`);
     }
 
-    if (user && pass) {
-      await authenticate(reader, socket, user, pass);
+    if (user && cleanPass) {
+      await authenticate(reader, socket, user, cleanPass);
     }
 
     socket.write(`MAIL FROM:<${fromEmail}>\r\n`);
