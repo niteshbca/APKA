@@ -11,6 +11,7 @@
     "keys": "node scripts/generateKeys.js",
     "seed": "node scripts/seedAdmin.js",
     "seed:data": "node scripts/seedData.js",
+    "seed:modules": "node scripts/seedDemoModules.js",
     "license": "node scripts/licenseAdmin.js",
     "migrate:tenants": "node scripts/migrateTenants.js",
     "test": "node --test"

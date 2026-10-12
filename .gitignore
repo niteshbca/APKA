@@ -17,5 +17,8 @@ build/
 server/keys/*
 !server/keys/public.pem
 
+# Database backups (generated at runtime)
+server/backups/
+
 # OS
 .DS_Store

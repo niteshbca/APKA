@@ -32,6 +32,7 @@ const NAV = [
 
   // Operations
   { to: '/tasks', label: 'Tasks', icon: '✅', perm: 'tasks.view', module: 'tasks', group: 'Operations' },
+  { to: '/work-reports', label: 'Work Reports', icon: '🗒️', perm: 'workreports.view', module: 'workreports', group: 'Operations' },
   { to: '/operations', label: 'Operations', icon: '🚚', perm: 'operations.view', module: 'operations', group: 'Operations' },
 
   // Marketing
@@ -46,6 +47,8 @@ const NAV = [
   { to: '/branches', label: 'Branches', icon: '🏢', perm: 'branches.view', module: 'branches', group: 'Administration' },
   { to: '/users', label: 'Users & Roles', icon: '🔐', perm: 'users.view', module: 'admin', group: 'Administration' },
   { to: '/integrations', label: 'Integrations', icon: '🔗', perm: 'integrations.view', module: 'integrations', group: 'Administration' },
+  { to: '/edit-log', label: 'Edit Log', icon: '📝', perm: 'audit.view', module: 'audit', group: 'Administration' },
+  { to: '/backup', label: 'Backup & Restore', icon: '💾', perm: 'backup.view', module: 'backup', group: 'Administration' },
   { to: '/modules', label: 'Modules', icon: '🧩', perm: 'settings.edit', module: 'settings', group: 'Administration' },
   { to: '/license', label: 'Subscription', icon: '🔑', perm: 'license.manage', module: 'subscription', group: 'Administration' },
   { to: '/settings', label: 'Settings', icon: '⚙️', perm: 'settings.view', module: 'settings', group: 'Administration' },

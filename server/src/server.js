@@ -38,6 +38,9 @@ const aiRoutes = require('./routes/ai');
 const operationsRoutes = require('./routes/operations');
 const marketingRoutes = require('./routes/marketing');
 const integrationsRoutes = require('./routes/integrations');
+const workReportRoutes = require('./routes/workReports');
+const auditRoutes = require('./routes/audit');
+const backupRoutes = require('./routes/backup');
 const cloudSyncWorker = require('./services/cloudSyncWorker');
 const keyService = require('./services/keyService');
 const licenseService = require('./services/licenseService');
@@ -94,6 +97,9 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/operations', operationsRoutes);
 app.use('/api/marketing', marketingRoutes);
 app.use('/api/integrations', integrationsRoutes);
+app.use('/api/work-reports', workReportRoutes);
+app.use('/api/audit', auditRoutes);
+app.use('/api/backup', backupRoutes);
 
 // Desktop installer download (served from server/public/installer).
 const INSTALLER_DIR = path.join(__dirname, '..', 'public', 'installer');

@@ -81,8 +81,9 @@ const PERMISSIONS = [
   { key: 'users.edit', label: 'Edit user', module: 'admin' },
   { key: 'users.delete', label: 'Delete user', module: 'admin' },
   { key: 'roles.manage', label: 'Manage roles & permissions', module: 'admin' },
-  { key: 'audit.view', label: 'View audit logs', module: 'admin' },
-  { key: 'backup.manage', label: 'Backup & restore', module: 'admin' },
+  { key: 'audit.view', label: 'View audit logs', module: 'audit' },
+  { key: 'backup.view', label: 'View backups', module: 'backup' },
+  { key: 'backup.manage', label: 'Backup & restore', module: 'backup' },
 
   // Branches
   { key: 'branches.view', label: 'View branches', module: 'branches' },
@@ -117,6 +118,7 @@ const PERMISSIONS = [
   // Operations
   { key: 'operations.view', label: 'View operations', module: 'operations' },
   { key: 'operations.manage', label: 'Manage operations', module: 'operations' },
+  { key: 'workreports.view', label: 'View work reports', module: 'workreports' },
 
   // AI assistant
   { key: 'ai.view', label: 'Open AI assistant', module: 'ai' },
