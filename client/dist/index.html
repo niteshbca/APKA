@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="NiteshPro POS - offline-first Point of Sale with automatic cloud sync" />
+    <meta name="theme-color" content="#16a34a" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>NiteshPro POS</title>
+    <script>
+      // Apply the saved theme + accent before first paint to avoid a flash.
+      try {
+        var t = localStorage.getItem('pos_theme');
+        if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+        var a = localStorage.getItem('pos_accent');
+        if (a) document.documentElement.style.setProperty('--primary', a);
+      } catch (e) {}
+    </script>
+    <script type="module" crossorigin src="/assets/index-2ugPnTWR.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-CUCz0TLY.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
