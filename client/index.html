@@ -13,10 +13,12 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>NiteshPro POS</title>
     <script>
-      // Apply the saved theme before first paint to avoid a flash.
+      // Apply the saved theme + accent before first paint to avoid a flash.
       try {
         var t = localStorage.getItem('pos_theme');
         if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+        var a = localStorage.getItem('pos_accent');
+        if (a) document.documentElement.style.setProperty('--primary', a);
       } catch (e) {}
     </script>
   </head>

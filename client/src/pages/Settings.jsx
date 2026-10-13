@@ -3,9 +3,11 @@ import api from '../api/axios';
 import db from '../db';
 import { useToast } from '../context/ToastContext';
 import { Button, Card, Field } from '../components/ui';
+import { ACCENTS, applyAccent, savedAccent, DEFAULT_ACCENT } from '../utils/theme';
 
 export default function Settings() {
   const [form, setForm] = useState({});
+  const [accent, setAccent] = useState(savedAccent());
   const { toast } = useToast();
 
   useEffect(() => {
@@ -21,8 +23,10 @@ export default function Settings() {
         thermalWidth: s.thermalWidth,
         currency: s.currency,
         invoicePrefix: s.invoicePrefix,
+        accentColor: s.accentColor || DEFAULT_ACCENT,
       };
       setForm(clean);
+      if (s.accentColor) { applyAccent(s.accentColor); setAccent(s.accentColor); }
       db.put('settings', { key: 'business_settings', ...clean });
     }).catch((e) => toast(e.message, 'error'));
   }, []);
@@ -39,10 +43,49 @@ export default function Settings() {
 
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
 
+  const pickAccent = (hex) => {
+    const applied = applyAccent(hex);
+    setAccent(applied);
+    setForm((f) => ({ ...f, accentColor: applied }));
+    api.put('/settings', { accentColor: applied }).catch(() => {});
+  };
+
   return (
     <div>
       <h2 className="mb-16">Settings</h2>
-      <Card title="Business Details">
+
+      <Card title="Appearance">
+        <div className="muted small mb-16">
+          Apni brand colour chunein — ye poore software (buttons, sidebar, charts) par turant lag jayegi aur save rahegi.
+        </div>
+        <div className="swatch-grid">
+          {ACCENTS.map((a) => (
+            <button
+              key={a.value}
+              type="button"
+              className={`swatch ${accent.toLowerCase() === a.value ? 'active' : ''}`}
+              style={{ background: a.value }}
+              title={a.name}
+              onClick={() => pickAccent(a.value)}
+            >
+              {accent.toLowerCase() === a.value ? '✓' : ''}
+            </button>
+          ))}
+        </div>
+        <div className="form-row mt-16">
+          <Field label="Custom colour">
+            <div className="color-pick">
+              <input type="color" className="color-input" value={accent} onChange={(e) => pickAccent(e.target.value)} />
+              <span className="muted small">{accent.toUpperCase()}</span>
+            </div>
+          </Field>
+          <Field label="&nbsp;">
+            <Button variant="ghost" onClick={() => pickAccent(DEFAULT_ACCENT)}>Reset to default</Button>
+          </Field>
+        </div>
+      </Card>
+
+      <Card title="Business Details" className="mt-16">
         <div className="form-row">
           <Field label="Business Name"><input className="input" value={form.businessName || ''} onChange={set('businessName')} /></Field>
           <Field label="Phone"><input className="input" value={form.phone || ''} onChange={set('phone')} /></Field>

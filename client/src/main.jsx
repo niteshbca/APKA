@@ -2,7 +2,11 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
+import { applyAccent, savedAccent } from './utils/theme';
 import './index.css';
+
+// Apply the saved brand accent before first paint.
+applyAccent(savedAccent());
 
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', async () => {

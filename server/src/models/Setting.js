@@ -20,6 +20,8 @@ const settingsSchema = new mongoose.Schema(
     financialYear: { type: String, default: '' },
     allowNegativeStock: { type: Boolean, default: false },
     labelDefaults: { type: mongoose.Schema.Types.Mixed, default: {} },
+    // Brand accent colour (hex) used across the whole UI.
+    accentColor: { type: String, default: '#4f46e5' },
     // Automatic backup configuration (per company). Managed by backupScheduler.
     autoBackup: {
       type: mongoose.Schema.Types.Mixed,

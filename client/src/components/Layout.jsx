@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import api from '../api/axios';
+import { applyAccent } from '../utils/theme';
 import { useAuth } from '../context/AuthContext';
 import { useSync } from '../context/SyncContext';
 import { useBranch } from '../context/BranchContext';
@@ -141,6 +143,14 @@ export default function Layout({ children }) {
   useEffect(() => {
     localStorage.setItem('pos_sidebar_collapsed', collapsed ? '1' : '0');
   }, [collapsed]);
+
+  // Sync the brand accent from the business settings (so it follows the shop
+  // across devices) — local value already applied for instant/no-flash paint.
+  useEffect(() => {
+    api.get('/settings')
+      .then((r) => { const c = r.data?.data?.accentColor; if (c) applyAccent(c); })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const onChange = () => setIsFullscreen(!!document.fullscreenElement);
@@ -373,12 +383,12 @@ export default function Layout({ children }) {
               {theme === 'dark' ? '☀️' : '🌙'}
             </button>
 
-            <button className="icon-btn hide-mobile" onClick={toggleFullscreen} title="Toggle fullscreen">
+            <button className="icon-btn hide-md" onClick={toggleFullscreen} title="Toggle fullscreen">
               {isFullscreen ? '🡼' : '⛶'}
             </button>
 
             {hasPermission('settings.view') && (
-              <button className="icon-btn hide-mobile" onClick={() => navigate('/notifications')} title="Notifications">
+              <button className="icon-btn hide-md" onClick={() => navigate('/notifications')} title="Notifications">
                 🔔
               </button>
             )}
