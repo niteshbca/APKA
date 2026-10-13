@@ -1857,5 +1857,64 @@ body {
 .pos-topbar .user-profile .user-role { color: rgba(255, 255, 255, 0.8); }
 .pos-topbar .user-avatar { background: rgba(255, 255, 255, 0.22); color: #fff; }
 
+/* ============================================================================
+   Login — premium animated billing/inventory background
+   ============================================================================ */
+.login-bg { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 1; }
+
+/* Drifting tech grid */
+.login-bg .lg-grid {
+  position: absolute; inset: -60%;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 46px 46px;
+  -webkit-mask-image: radial-gradient(circle at 50% 45%, #000 0%, transparent 70%);
+  mask-image: radial-gradient(circle at 50% 45%, #000 0%, transparent 70%);
+  animation: gridPan 26s linear infinite;
+}
+@keyframes gridPan { from { background-position: 0 0; } to { background-position: 46px 92px; } }
+
+/* Barcode-scanner beam sweeping down */
+.login-bg .lg-scan {
+  position: absolute; left: 0; right: 0; height: 160px; top: -20%;
+  background: linear-gradient(180deg, transparent, rgba(34, 211, 238, 0.18), rgba(99, 102, 241, 0.14), transparent);
+  filter: blur(2px);
+  animation: scanDown 7.5s ease-in-out infinite;
+}
+@keyframes scanDown {
+  0% { top: -20%; opacity: 0; }
+  15% { opacity: 1; }
+  85% { opacity: 1; }
+  100% { top: 108%; opacity: 0; }
+}
+
+/* Floating billing / inventory chips */
+.login-bg .lg-item {
+  position: absolute; bottom: -90px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  opacity: 0;
+  animation-name: floatUp;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform, opacity;
+}
+@keyframes floatUp {
+  0% { transform: translateY(0) rotate(-8deg) scale(0.9); opacity: 0; }
+  12% { opacity: 0.9; }
+  50% { transform: translateY(-46vh) rotate(7deg) scale(1.02); }
+  88% { opacity: 0.9; }
+  100% { transform: translateY(-96vh) rotate(-5deg) scale(0.92); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-bg .lg-grid, .login-bg .lg-scan, .login-bg .lg-item { animation: none !important; }
+  .login-bg .lg-item { opacity: 0.35; }
+}
+
 
 

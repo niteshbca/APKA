@@ -4,6 +4,22 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { Button } from '../components/ui';
 
+// Floating billing/inventory icons that drift up behind the login card.
+const FLOATERS = [
+  { icon: '🧾', left: '6%', size: 54, delay: 0, dur: 16 },
+  { icon: '📦', left: '16%', size: 50, delay: 3, dur: 19 },
+  { icon: '🛒', left: '25%', size: 46, delay: 6, dur: 15 },
+  { icon: '🏷️', left: '34%', size: 48, delay: 1.5, dur: 20 },
+  { icon: '💰', left: '44%', size: 52, delay: 8, dur: 17 },
+  { icon: '📊', left: '53%', size: 50, delay: 4.5, dur: 21 },
+  { icon: '🧾', left: '62%', size: 46, delay: 10, dur: 16 },
+  { icon: '📦', left: '71%', size: 54, delay: 2, dur: 18 },
+  { icon: '💳', left: '80%', size: 48, delay: 7, dur: 20 },
+  { icon: '🛒', left: '89%', size: 50, delay: 5, dur: 15 },
+  { icon: '🏷️', left: '11%', size: 44, delay: 11, dur: 22 },
+  { icon: '📈', left: '67%', size: 44, delay: 12, dur: 23 },
+];
+
 export default function Login() {
   const { login, loginPin } = useAuth();
   const { toast } = useToast();
@@ -48,6 +64,27 @@ export default function Login() {
 
   return (
     <div className="login-page login-premium">
+      <div className="login-bg" aria-hidden="true">
+        <span className="lg-grid" />
+        <span className="lg-scan" />
+        {FLOATERS.map((f, i) => (
+          <span
+            key={i}
+            className="lg-item"
+            style={{
+              left: f.left,
+              width: f.size,
+              height: f.size,
+              fontSize: f.size * 0.5,
+              animationDelay: `${f.delay}s`,
+              animationDuration: `${f.dur}s`,
+            }}
+          >
+            {f.icon}
+          </span>
+        ))}
+      </div>
+
       <div className="login-orbs" aria-hidden="true">
         <span className="orb orb-1" />
         <span className="orb orb-2" />
