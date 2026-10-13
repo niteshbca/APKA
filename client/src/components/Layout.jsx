@@ -58,22 +58,6 @@ const NAV = [
   { to: '/platform', label: 'Platform', icon: '🌐', superadminOnly: true, platform: true, group: 'Administration' },
 ];
 
-const SYNC_LABEL = {
-  ONLINE: '● ONLINE',
-  OFFLINE: '● OFFLINE',
-  SYNCING: '⟳ SYNCING',
-  'SYNC COMPLETED': '✓ SYNC COMPLETED',
-  'SYNC FAILED': '✕ SYNC FAILED',
-};
-
-const SYNC_PILL_CLASS = {
-  ONLINE: 'online',
-  OFFLINE: 'offline',
-  SYNCING: 'syncing',
-  'SYNC COMPLETED': 'completed',
-  'SYNC FAILED': 'failed',
-};
-
 const SYNC_ICON = {
   ONLINE: '🌐',
   OFFLINE: '📴',
@@ -206,6 +190,14 @@ export default function Layout({ children }) {
 
   const branchLabel = activeBranch?.name || 'No branch';
 
+  // Single source of truth for the one-and-only sidebar sync indicator.
+  const syncState = sync.pendingOps > 0
+    ? { cls: 'syncing', label: `⟳ ${sync.pendingOps} pending sync` }
+    : sync.status === 'SYNCING' ? { cls: 'syncing', label: '⟳ SYNCING' }
+    : sync.status === 'OFFLINE' ? { cls: 'offline', label: '● OFFLINE' }
+    : sync.status === 'SYNC FAILED' ? { cls: 'failed', label: '✕ SYNC FAILED' }
+    : { cls: 'online', label: '● ONLINE' };
+
   return (
     <div className={`app-shell ${collapsed ? 'sidebar-collapsed' : ''}`}>
       <aside className={`sidebar ${menuOpen ? 'open' : ''}`}>
@@ -275,16 +267,10 @@ export default function Layout({ children }) {
           })}
         </nav>
 
-        <div className={`sync-pill ${SYNC_PILL_CLASS[sync.status] || 'offline'}`} title={sync.status}>
+        <div className={`sync-pill ${syncState.cls}`} title="Click to sync now" onClick={sync.triggerSync}>
           <span className="sync-dot" />
-          <span className="sync-text">{SYNC_LABEL[sync.status] || sync.status}</span>
+          <span className="sync-text">{syncState.label}</span>
         </div>
-        {sync.pendingOps > 0 && (
-          <div className="sync-pill" style={{ background: 'rgba(245,158,11,0.15)', color: '#fbbf24' }}>
-            <span className="sync-dot" />
-            <span className="sync-text">{sync.pendingOps} pending sync</span>
-          </div>
-        )}
 
         <div className="sidebar-footer">
           <div className="sidebar-user">

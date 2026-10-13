@@ -1388,7 +1388,7 @@ a { color: var(--primary); text-decoration: none; }
 :root {
   --grad-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 52%, #22d3ee 100%);
   --grad-sidebar: linear-gradient(180deg, #0b1224 0%, #0f172a 58%, #141b38 100%);
-  --sidebar-w: 264px;
+  --sidebar-w: 276px;
   --sidebar-w-collapsed: 78px;
   --topbar-h: 68px;
   --ring: 0 0 0 4px rgba(99, 102, 241, 0.18);
@@ -1758,12 +1758,17 @@ body {
 }
 .sidebar a.active::before { background: #fff; }
 
-.sidebar .sync-pill { background: rgba(255, 255, 255, 0.18); color: #fff; }
+.sidebar .sync-pill { background: rgba(255, 255, 255, 0.18); color: #fff; cursor: pointer; margin: 10px 14px; padding: 10px 12px; }
+.sidebar .sync-pill.online { background: rgba(255, 255, 255, 0.18); color: #fff; }
+.sidebar .sync-pill.syncing { background: rgba(255, 255, 255, 0.28); color: #fff; }
+.sidebar .sync-pill.offline,
+.sidebar .sync-pill.failed { background: rgba(185, 28, 28, 0.92); color: #fff; }
 
-.sidebar-user { background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.16); }
+.sidebar-user { background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.16); padding: 11px 12px; }
 .sidebar-user .user-meta b { color: #fff; }
 .sidebar-user .user-meta span { color: rgba(255, 255, 255, 0.72); }
-.sidebar-logout { background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.16); color: #fff; }
+.sidebar-footer { margin-top: auto; padding: 14px 14px 16px; border-top: 1px solid rgba(255, 255, 255, 0.16); }
+.sidebar-logout { margin-top: 10px; padding: 11px; border-radius: 12px; background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.16); color: #fff; }
 .sidebar-logout:hover { background: rgba(255, 255, 255, 0.26); border-color: transparent; color: #fff; }
 
 .ss-input { background: rgba(255, 255, 255, 0.16); color: #fff; border-color: transparent; }
