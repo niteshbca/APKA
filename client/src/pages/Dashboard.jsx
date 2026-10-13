@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { NavLink } from 'react-router-dom';
 import api from '../api/axios';
 import { money } from '../utils/format';
 import { useBranch } from '../context/BranchContext';
@@ -9,7 +10,7 @@ export default function Dashboard() {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const { activeBranch } = useBranch();
-  const { isSuperAdmin } = useAuth();
+  const { user, isSuperAdmin, hasPermission } = useAuth();
 
   const load = () => {
     const params = {};
@@ -45,11 +46,35 @@ export default function Dashboard() {
   const payTotal = (paymentSplit.cash || 0) + (paymentSplit.upi || 0) + (paymentSplit.card || 0) || 1;
   const payPct = (v) => Math.round(((v || 0) / payTotal) * 100);
 
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const firstName = (user?.name || 'there').split(' ')[0];
+  const todayLabel = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' });
+
   return (
     <div>
-      <div className="flex-between mb-16">
-        <h2>Dashboard</h2>
-        {activeBranch && <span className="badge badge-info">🏬 {activeBranch.name}</span>}
+      <div className="dash-hero">
+        <div className="dash-hero-inner">
+          <div>
+            <h1>{greeting}, {firstName} 👋</h1>
+            <p>
+              {todayLabel}
+              {activeBranch ? ` · 🏬 ${activeBranch.name}` : ' · All branches'}
+              {' — here is your business at a glance.'}
+            </p>
+          </div>
+          <div className="dash-hero-actions">
+            {hasPermission('sales.create') && (
+              <NavLink className="btn btn-onhero solid" to="/billing">🧾 New Bill</NavLink>
+            )}
+            {hasPermission('products.view') && (
+              <NavLink className="btn btn-onhero" to="/products">📦 Products</NavLink>
+            )}
+            {hasPermission('reports.view') && (
+              <NavLink className="btn btn-onhero" to="/reports">📈 Reports</NavLink>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="stat-grid">

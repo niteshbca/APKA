@@ -71,7 +71,7 @@ export function Field({ label, children, className = '' }) {
   );
 }
 
-export function StatCard({ label, value, sub, icon, tone = 'primary' }) {
+export function StatCard({ label, value, sub, icon, tone = 'primary', accent, trend, trendLabel }) {
   const colors = {
     primary: { bg: '#eef2ff', fg: '#4f46e5' },
     success: { bg: '#dcfce7', fg: '#16a34a' },
@@ -81,17 +81,24 @@ export function StatCard({ label, value, sub, icon, tone = 'primary' }) {
   };
   const c = colors[tone] || colors.primary;
   return (
-    <div className="stat-card">
+    <div className="stat-card" style={{ '--stat-accent': accent || c.fg }}>
       <div className="flex-between">
         <div className="label">{label}</div>
         {icon && (
-          <div style={{ width: 34, height: 34, borderRadius: 8, background: c.bg, color: c.fg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>
+          <div className="stat-ico" style={{ background: c.bg, color: c.fg }}>
             {icon}
           </div>
         )}
       </div>
       <div className="value">{value}</div>
-      {sub && <div className="sub">{sub}</div>}
+      <div className="stat-foot">
+        {typeof trend === 'number' && (
+          <span className={`stat-trend ${trend >= 0 ? 'up' : 'down'}`}>
+            {trend >= 0 ? '▲' : '▼'} {Math.abs(trend)}%
+          </span>
+        )}
+        {(sub || trendLabel) && <span className="sub" style={{ margin: 0 }}>{trendLabel || sub}</span>}
+      </div>
     </div>
   );
 }

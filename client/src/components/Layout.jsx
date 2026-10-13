@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useSync } from '../context/SyncContext';
@@ -72,6 +72,14 @@ const SYNC_PILL_CLASS = {
   'SYNC FAILED': 'failed',
 };
 
+const SYNC_ICON = {
+  ONLINE: '🌐',
+  OFFLINE: '📴',
+  SYNCING: '⟳',
+  'SYNC COMPLETED': '✅',
+  'SYNC FAILED': '⚠️',
+};
+
 export default function Layout({ children }) {
   const { user, logout, isSuperAdmin, hasPermission } = useAuth();
   const { branches, activeBranch, setActiveBranch, canSwitchBranch } = useBranch();
@@ -79,9 +87,19 @@ export default function Layout({ children }) {
   const sync = useSync();
   const navigate = useNavigate();
   const location = useLocation();
+
   const [menuOpen, setMenuOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem('pos_sidebar_collapsed') === '1');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [branchMenu, setBranchMenu] = useState(false);
+  const [userMenu, setUserMenu] = useState(false);
+  const [q, setQ] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [sideQuery, setSideQuery] = useState('');
+  const [sideOpen, setSideOpen] = useState(false);
+  const [closedGroups, setClosedGroups] = useState([]);
+  const [theme, setTheme] = useState(() => localStorage.getItem('pos_theme') || 'light');
+  const searchRef = useRef(null);
 
   const navModuleKeys = NAV.map((n) => n.module).filter(Boolean);
   const visible = [
@@ -105,11 +123,41 @@ export default function Layout({ children }) {
     if (groupItems.length) sections.push({ group: g, items: groupItems });
   }
 
+  const current = visible.find((n) => (n.to === '/' ? location.pathname === '/' : location.pathname.startsWith(n.to)));
+  const results = q.trim()
+    ? visible.filter((n) => n.label.toLowerCase().includes(q.trim().toLowerCase())).slice(0, 8)
+    : [];
+  const sideResults = sideQuery.trim()
+    ? visible.filter((n) => n.label.toLowerCase().includes(sideQuery.trim().toLowerCase())).slice(0, 10)
+    : [];
+
+  const initials = (user?.name || user?.username || '?').trim().charAt(0).toUpperCase();
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem('pos_theme', theme);
+  }, [theme]);
+
+  useEffect(() => {
+    localStorage.setItem('pos_sidebar_collapsed', collapsed ? '1' : '0');
+  }, [collapsed]);
+
   useEffect(() => {
     const onChange = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener('fullscreenchange', onChange);
     return () => document.removeEventListener('fullscreenchange', onChange);
   }, []);
+
+  // Close any open popover when the route changes.
+  useEffect(() => {
+    setBranchMenu(false);
+    setUserMenu(false);
+    setSearchOpen(false);
+    setQ('');
+    setSideOpen(false);
+    setSideQuery('');
+    setMenuOpen(false);
+  }, [location.pathname]);
 
   const toggleFullscreen = async () => {
     try {
@@ -124,44 +172,121 @@ export default function Layout({ children }) {
   };
 
   const handleLogout = () => {
+    setUserMenu(false);
     logout();
     navigate('/login');
+  };
+
+  const go = (to) => {
+    setQ('');
+    setSearchOpen(false);
+    navigate(to);
+  };
+
+  const goSide = (to) => {
+    setSideQuery('');
+    setSideOpen(false);
+    setMenuOpen(false);
+    navigate(to);
+  };
+
+  const toggleGroup = (g) => {
+    setClosedGroups((prev) => (prev.includes(g) ? prev.filter((x) => x !== g) : [...prev, g]));
   };
 
   const branchLabel = activeBranch?.name || 'No branch';
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${collapsed ? 'sidebar-collapsed' : ''}`}>
       <aside className={`sidebar ${menuOpen ? 'open' : ''}`}>
-        <div className="brand">🛒 NiteshPro POS</div>
-        <nav>
-          {sections.map((section) => (
-            <div className="nav-group" key={section.group}>
-              <div className="nav-group-title">{section.group}</div>
-              {section.items.map((n) => (
-                <NavLink
-                  key={n.to}
-                  to={n.to}
-                  end={n.to === '/'}
-                  className={({ isActive }) => (isActive ? 'active' : '')}
-                  onClick={() => setMenuOpen(false)}
-                >
-                  <span>{n.icon}</span> {n.label}
-                </NavLink>
-              ))}
+        <div className="brand" onClick={() => collapsed && setCollapsed(false)} title={collapsed ? 'Expand sidebar' : ''} style={collapsed ? { cursor: 'pointer' } : undefined}>
+          <span className="brand-mark-sm">🛒</span>
+          <span className="brand-text">
+            <b>NiteshPro</b>
+            <span>Point of Sale</span>
+          </span>
+          <button className="collapse-btn" title="Collapse sidebar" onClick={() => setCollapsed(true)}>⇤</button>
+        </div>
+
+        <div className="sidebar-search">
+          <span className="ss-ico">🔍</span>
+          <input
+            className="ss-input"
+            placeholder="Search menu…"
+            value={sideQuery}
+            onChange={(e) => { setSideQuery(e.target.value); setSideOpen(true); }}
+            onFocus={() => setSideOpen(true)}
+            onBlur={() => setTimeout(() => setSideOpen(false), 150)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && sideResults[0]) goSide(sideResults[0].to);
+              if (e.key === 'Escape') { setSideOpen(false); setSideQuery(''); }
+            }}
+          />
+          {sideOpen && sideQuery.trim() && (
+            <div className="sidebar-results">
+              {sideResults.length === 0 ? (
+                <div className="cmd-empty">No matches for “{sideQuery}”.</div>
+              ) : (
+                sideResults.map((n) => (
+                  <button key={n.to} className="cmd-item" onMouseDown={(e) => e.preventDefault()} onClick={() => goSide(n.to)}>
+                    <span className="cmd-ico-cell">{n.icon}</span>
+                    {n.label}
+                  </button>
+                ))
+              )}
             </div>
-          ))}
+          )}
+        </div>
+
+        <nav>
+          {sections.map((section) => {
+            const isOpen = collapsed || !closedGroups.includes(section.group);
+            return (
+              <div className="nav-group" key={section.group}>
+                <button className="nav-group-title" onClick={() => toggleGroup(section.group)}>
+                  <span>{section.group}</span>
+                  <span className={`nav-caret ${isOpen ? 'open' : ''}`}>▾</span>
+                </button>
+                {isOpen && section.items.map((n) => (
+                  <NavLink
+                    key={n.to}
+                    to={n.to}
+                    end={n.to === '/'}
+                    title={n.label}
+                    className={({ isActive }) => (isActive ? 'active' : '')}
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    <span className="nav-ico">{n.icon}</span>
+                    <span className="nav-label">{n.label}</span>
+                  </NavLink>
+                ))}
+              </div>
+            );
+          })}
         </nav>
-        <div className={`sync-pill ${SYNC_PILL_CLASS[sync.status] || 'offline'}`}>
-          {SYNC_LABEL[sync.status] || sync.status}
+
+        <div className={`sync-pill ${SYNC_PILL_CLASS[sync.status] || 'offline'}`} title={sync.status}>
+          <span className="sync-dot" />
+          <span className="sync-text">{SYNC_LABEL[sync.status] || sync.status}</span>
         </div>
         {sync.pendingOps > 0 && (
           <div className="sync-pill" style={{ background: 'rgba(245,158,11,0.15)', color: '#fbbf24' }}>
-            {sync.pendingOps} pending sync
+            <span className="sync-dot" />
+            <span className="sync-text">{sync.pendingOps} pending sync</span>
           </div>
         )}
+
         <div className="sidebar-footer">
-          <button className="btn btn-ghost btn-sm" style={{ color: '#fff', borderColor: 'rgba(255,255,255,0.2)' }} onClick={handleLogout}>Logout</button>
+          <div className="sidebar-user">
+            <span className="user-avatar-sm">{initials}</span>
+            <span className="user-meta">
+              <b>{user?.name}</b>
+              <span>{user?.role}</span>
+            </span>
+          </div>
+          <button className="btn btn-sm sidebar-logout" onClick={handleLogout}>
+            ⎋ <span>Logout</span>
+          </button>
         </div>
       </aside>
 
@@ -171,20 +296,56 @@ export default function Layout({ children }) {
         <header className="topbar">
           <div className="topbar-left">
             <button className="menu-btn" aria-label="Menu" onClick={() => setMenuOpen(true)}>☰</button>
-            <div style={{ fontSize: 15, fontWeight: 700 }}>
-              {user?.name} <span className="muted small">({user?.role})</span>
+            <div className="topbar-title">
+              <b>{current?.label || 'Dashboard'}</b>
+              <span>Welcome back, {user?.name}</span>
             </div>
           </div>
+
+          <div className="cmd">
+            <span className="cmd-ico">🔍</span>
+            <input
+              ref={searchRef}
+              className="cmd-input"
+              placeholder="Search modules, pages, actions…"
+              value={q}
+              onChange={(e) => { setQ(e.target.value); setSearchOpen(true); }}
+              onFocus={() => setSearchOpen(true)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && results[0]) go(results[0].to);
+                if (e.key === 'Escape') { setSearchOpen(false); setQ(''); }
+              }}
+            />
+            {searchOpen && q.trim() && (
+              <>
+                <div className="pop-backdrop" onClick={() => setSearchOpen(false)} />
+                <div className="cmd-menu">
+                  {results.length === 0 ? (
+                    <div className="cmd-empty">No matches for “{q}”.</div>
+                  ) : (
+                    results.map((n) => (
+                      <button key={n.to} className="cmd-item" onClick={() => go(n.to)}>
+                        <span className="cmd-ico-cell">{n.icon}</span>
+                        {n.label}
+                      </button>
+                    ))
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+
           <div className="flex gap-8" style={{ alignItems: 'center' }}>
             {canSwitchBranch && branches.length > 0 ? (
               <div style={{ position: 'relative' }}>
-                <button className="btn btn-ghost btn-sm" onClick={() => setBranchMenu((s) => !s)} title="Switch branch">
-                  🏬 {branchLabel} ▾
+                <button className="icon-btn" onClick={() => { setBranchMenu((s) => !s); setUserMenu(false); }} title="Switch branch">
+                  🏬
                 </button>
                 {branchMenu && (
                   <>
-                    <div style={{ position: 'fixed', inset: 0, zIndex: 60 }} onClick={() => setBranchMenu(false)} />
+                    <div className="pop-backdrop" onClick={() => setBranchMenu(false)} />
                     <div className="branch-dropdown">
+                      <div className="menu-pop-head muted small">Active branch · {branchLabel}</div>
                       {branches.map((b) => (
                         <button
                           key={b._id}
@@ -202,15 +363,51 @@ export default function Layout({ children }) {
             ) : (
               branches.length > 0 && <span className="badge badge-neutral hide-mobile">🏬 {branchLabel}</span>
             )}
-            <button
-              className="btn btn-ghost btn-sm hide-mobile"
-              onClick={toggleFullscreen}
-              title="Toggle fullscreen"
-            >
-              {isFullscreen ? '🡼 Exit' : '⛶ Full Screen'}
+
+            <button className="icon-btn" title={`Sync: ${sync.status}`} onClick={sync.triggerSync} style={{ color: sync.status === 'OFFLINE' ? '#f87171' : sync.status === 'ONLINE' ? '#16a34a' : undefined }}>
+              {SYNC_ICON[sync.status] || '🌐'}
+              {sync.pendingOps > 0 && <span className="dot" />}
             </button>
-            <span className="muted small hide-mobile">{new Date().toLocaleDateString('en-IN', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })}</span>
-            <button className="btn btn-ghost btn-sm hide-mobile" onClick={handleLogout}>Logout</button>
+
+            <button className="icon-btn" onClick={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))} title="Toggle theme">
+              {theme === 'dark' ? '☀️' : '🌙'}
+            </button>
+
+            <button className="icon-btn hide-mobile" onClick={toggleFullscreen} title="Toggle fullscreen">
+              {isFullscreen ? '🡼' : '⛶'}
+            </button>
+
+            {hasPermission('settings.view') && (
+              <button className="icon-btn hide-mobile" onClick={() => navigate('/notifications')} title="Notifications">
+                🔔
+              </button>
+            )}
+
+            <div style={{ position: 'relative' }}>
+              <button className="user-chip" onClick={() => { setUserMenu((s) => !s); setBranchMenu(false); }}>
+                <span className="user-avatar-sm">{initials}</span>
+                <span className="user-name">{user?.name}</span>
+                <span className="muted" style={{ fontSize: 10 }}>▾</span>
+              </button>
+              {userMenu && (
+                <>
+                  <div className="pop-backdrop" onClick={() => setUserMenu(false)} />
+                  <div className="menu-pop">
+                    <div className="menu-pop-head">
+                      <div style={{ fontWeight: 800 }}>{user?.name}</div>
+                      <div className="muted small" style={{ textTransform: 'capitalize' }}>{user?.role}</div>
+                    </div>
+                    {hasPermission('settings.view') && (
+                      <button className="menu-item" onClick={() => { setUserMenu(false); navigate('/settings'); }}>⚙️ Settings</button>
+                    )}
+                    {hasPermission('license.manage') && (
+                      <button className="menu-item" onClick={() => { setUserMenu(false); navigate('/license'); }}>🔑 Subscription</button>
+                    )}
+                    <button className="menu-item danger" onClick={handleLogout}>⎋ Logout</button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </header>
         <main className="page-content">{children}</main>
