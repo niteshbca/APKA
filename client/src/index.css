@@ -1814,5 +1814,20 @@ body {
 .color-pick { display: flex; align-items: center; gap: 10px; }
 .color-input { width: 48px; height: 40px; padding: 2px; border: 1px solid var(--border); border-radius: 10px; background: var(--card); cursor: pointer; }
 
+/* Topbar: follows the brand accent (glass + tinted, with accent hairline strip) */
+.topbar {
+  background: linear-gradient(180deg, rgba(var(--primary-rgb), 0.12), rgba(var(--primary-rgb), 0.04)), var(--glass);
+  border-bottom: 1px solid rgba(var(--primary-rgb), 0.2);
+  box-shadow: 0 2px 14px rgba(var(--primary-rgb), 0.1);
+}
+.topbar::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--grad-primary);
+}
+.topbar-clock { border-right-color: rgba(var(--primary-rgb), 0.24); }
+.topbar-title b { color: var(--text); }
+.user-chip:hover { background: rgba(var(--primary-rgb), 0.14); }
+
 
 
