@@ -1829,5 +1829,20 @@ body {
 .topbar-title b { color: var(--text); }
 .user-chip:hover { background: rgba(var(--primary-rgb), 0.14); }
 
+/* Billing (POS) top bar follows the accent too */
+.pos-topbar {
+  background: linear-gradient(180deg, rgba(var(--primary-rgb), 0.12), rgba(var(--primary-rgb), 0.04)), var(--glass);
+  border-bottom: 1px solid rgba(var(--primary-rgb), 0.2);
+  box-shadow: 0 2px 14px rgba(var(--primary-rgb), 0.1);
+}
+.pos-topbar::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--grad-primary);
+}
+[data-theme="dark"] .pos-topbar {
+  background: linear-gradient(180deg, rgba(var(--primary-rgb), 0.16), rgba(var(--primary-rgb), 0.06)), #0d1526;
+}
+
 
 
