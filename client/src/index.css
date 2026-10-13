@@ -1814,35 +1814,48 @@ body {
 .color-pick { display: flex; align-items: center; gap: 10px; }
 .color-input { width: 48px; height: 40px; padding: 2px; border: 1px solid var(--border); border-radius: 10px; background: var(--card); cursor: pointer; }
 
-/* Topbar: follows the brand accent (glass + tinted, with accent hairline strip) */
+/* Topbar: brand-coloured like the sidebar (follows the accent colour) */
 .topbar {
-  background: linear-gradient(180deg, rgba(var(--primary-rgb), 0.12), rgba(var(--primary-rgb), 0.04)), var(--glass);
-  border-bottom: 1px solid rgba(var(--primary-rgb), 0.2);
-  box-shadow: 0 2px 14px rgba(var(--primary-rgb), 0.1);
-}
-.topbar::before {
-  content: '';
-  position: absolute; top: 0; left: 0; right: 0; height: 3px;
   background: var(--grad-primary);
+  border-bottom: none;
+  box-shadow: 0 6px 20px rgba(var(--primary-rgb), 0.28);
 }
-.topbar-clock { border-right-color: rgba(var(--primary-rgb), 0.24); }
-.topbar-title b { color: var(--text); }
-.user-chip:hover { background: rgba(var(--primary-rgb), 0.14); }
+.topbar-title b { color: #fff; }
+.topbar-title span { color: rgba(255, 255, 255, 0.78); }
+.topbar .menu-btn { background: rgba(255, 255, 255, 0.16); color: #fff; border-color: transparent; }
+.topbar .icon-btn { background: rgba(255, 255, 255, 0.16); border-color: rgba(255, 255, 255, 0.2); color: #fff; }
+.topbar .icon-btn:hover { background: rgba(255, 255, 255, 0.3); border-color: transparent; color: #fff; }
+.topbar .icon-btn .dot { box-shadow: 0 0 0 2px var(--primary); }
+.topbar .cmd-input { background: rgba(255, 255, 255, 0.18); border-color: transparent; color: #fff; }
+.topbar .cmd-input::placeholder { color: rgba(255, 255, 255, 0.75); }
+.topbar .cmd-input:focus { background: rgba(255, 255, 255, 0.26); border-color: rgba(255, 255, 255, 0.55); box-shadow: none; }
+.topbar .cmd-ico { color: rgba(255, 255, 255, 0.85); }
+.topbar .user-chip { background: rgba(255, 255, 255, 0.16); border-color: rgba(255, 255, 255, 0.2); color: #fff; }
+.topbar .user-chip:hover { background: rgba(255, 255, 255, 0.3); border-color: transparent; }
+.topbar .user-chip .user-name { color: #fff; }
+.topbar .user-chip .muted { color: rgba(255, 255, 255, 0.8) !important; }
+.topbar .badge { background: rgba(255, 255, 255, 0.18); color: #fff; }
+.topbar-clock { border-right-color: rgba(255, 255, 255, 0.28); }
+.topbar-clock .tc-date { color: rgba(255, 255, 255, 0.78); }
+.topbar-clock .tc-time { color: #fff; }
 
 /* Billing (POS) top bar follows the accent too */
 .pos-topbar {
-  background: linear-gradient(180deg, rgba(var(--primary-rgb), 0.12), rgba(var(--primary-rgb), 0.04)), var(--glass);
-  border-bottom: 1px solid rgba(var(--primary-rgb), 0.2);
-  box-shadow: 0 2px 14px rgba(var(--primary-rgb), 0.1);
-}
-.pos-topbar::before {
-  content: '';
-  position: absolute; top: 0; left: 0; right: 0; height: 3px;
   background: var(--grad-primary);
+  border-bottom: none;
+  box-shadow: 0 6px 20px rgba(var(--primary-rgb), 0.28);
 }
-[data-theme="dark"] .pos-topbar {
-  background: linear-gradient(180deg, rgba(var(--primary-rgb), 0.16), rgba(var(--primary-rgb), 0.06)), #0d1526;
-}
+.pos-topbar .pos-logo { color: #fff; }
+.pos-topbar .btn-ghost { color: #fff; border-color: rgba(255, 255, 255, 0.25); }
+.pos-topbar .btn-ghost:hover { background: rgba(255, 255, 255, 0.18); color: #fff; border-color: transparent; }
+.pos-topbar .badge { background: rgba(255, 255, 255, 0.18); color: #fff; }
+.pos-topbar .search-input { background: rgba(255, 255, 255, 0.18); border-color: transparent; color: #fff; }
+.pos-topbar .search-input::placeholder { color: rgba(255, 255, 255, 0.78); }
+.pos-topbar .search-input:focus { background: rgba(255, 255, 255, 0.26); border-color: rgba(255, 255, 255, 0.55); box-shadow: none; }
+.pos-topbar .search-icon { color: rgba(255, 255, 255, 0.85); }
+.pos-topbar .user-profile .user-name { color: #fff; }
+.pos-topbar .user-profile .user-role { color: rgba(255, 255, 255, 0.8); }
+.pos-topbar .user-avatar { background: rgba(255, 255, 255, 0.22); color: #fff; }
 
 
 
