@@ -138,7 +138,46 @@ router.post('/resend/:logId', requireRoles('superadmin', 'admin'), async (req, r
       );
     }
     await NotificationLog.create({ branch: branchId, sale: entry.sale, invoiceNo: entry.invoiceNo, channel: entry.channel, to, subject: entry.subject, message: entry.message, provider: entry.provider, status: result.status, error: result.error, meta: { resendOf: entry._id } });
+    // A successful resend resolves the original failure so it drops off the badge.
+    if (result.status === 'sent') {
+      await NotificationLog.updateOne({ _id: entry._id }, { read: true });
+    }
     res.json({ success: result.status === 'sent', data: result });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * Badge summary for the navbar bell:
+ *   unread — successful notifications the user hasn't seen yet (cleared when
+ *            the Notifications page is opened).
+ *   failed — delivery failures that stay visible until resolved.
+ */
+router.get('/summary', async (req, res, next) => {
+  try {
+    const branchId = resolveBranchId(req);
+    const scope = { ...(branchId ? { branch: branchId } : {}), 'meta.test': { $ne: true } };
+    const [unread, failed] = await Promise.all([
+      NotificationLog.countDocuments({ ...scope, status: 'sent', read: false }),
+      NotificationLog.countDocuments({ ...scope, status: 'failed', read: false }),
+    ]);
+    res.json({ success: true, data: { unread, failed, total: unread + failed } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/** Acknowledge successful notifications (called when the page is opened). */
+router.post('/mark-seen', async (req, res, next) => {
+  try {
+    const branchId = resolveBranchId(req);
+    const scope = branchId ? { branch: branchId } : {};
+    const result = await NotificationLog.updateMany(
+      { ...scope, status: 'sent', read: false },
+      { read: true }
+    );
+    res.json({ success: true, data: { marked: result.modifiedCount || result.nModified || 0 } });
   } catch (err) {
     next(err);
   }

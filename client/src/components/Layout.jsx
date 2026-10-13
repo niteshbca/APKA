@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useSync } from '../context/SyncContext';
 import { useBranch } from '../context/BranchContext';
 import { useModules } from '../context/ModulesContext';
+import NotificationBell from './NotificationBell';
 
 // Ordered sidebar sections — gives the app a professional, scannable layout.
 const GROUP_ORDER = ['Overview', 'Sales', 'Inventory', 'Finance', 'People', 'Operations', 'Marketing', 'Intelligence', 'Administration'];
@@ -375,9 +376,7 @@ export default function Layout({ children }) {
             </button>
 
             {hasPermission('settings.view') && (
-              <button className="icon-btn hide-md" onClick={() => navigate('/notifications')} title="Notifications">
-                🔔
-              </button>
+              <NotificationBell className="icon-btn hide-md" />
             )}
 
             <div style={{ position: 'relative' }}>

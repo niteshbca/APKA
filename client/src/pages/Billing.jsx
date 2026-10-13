@@ -16,10 +16,12 @@ import { useSync } from '../context/SyncContext';
 import { useAuth } from '../context/AuthContext';
 import { useBranch } from '../context/BranchContext';
 import { Button, Card, Modal, Field, Badge, EmptyState } from '../components/ui';
+import NotificationBell from '../components/NotificationBell';
 import PaymentModal from '../components/Billing/PaymentModal';
 import InvoicePreview from '../components/Billing/InvoicePreview';
 import { printInvoice } from '../utils/print';
 import { waLink, mailtoLink, saleMessage, saleEmailSubject } from '../utils/notify';
+import { pulseNotifPending, refreshNotifBadge } from '../utils/notifyBadge';
 
 const CATEGORY_PLACEHOLDERS = {
   beverages: '🥤',
@@ -296,6 +298,7 @@ export default function Billing() {
       return;
     }
     setSubmitting(true);
+    pulseNotifPending();
     const deviceId = await getDeviceId();
     const cashierName = user.name || 'cashier';
     const saleEmail = (payment.email || customer?.email || '').trim();
@@ -401,6 +404,7 @@ export default function Billing() {
       }
     } finally {
       setSubmitting(false);
+      refreshNotifBadge();
     }
   };
 
@@ -412,6 +416,7 @@ export default function Billing() {
     if (channel !== 'whatsapp' && !email) return toast('Customer ka email add karo', 'error');
     if (channel !== 'email' && !phone) return toast('Customer ka mobile number add karo', 'error');
     setNotifySending(channel);
+    pulseNotifPending();
     try {
       const res = await api.post('/notifications/send', {
         branch: activeBranch?._id,
@@ -430,6 +435,7 @@ export default function Billing() {
       toast(`Send failed: ${err.message}`, 'error');
     } finally {
       setNotifySending('');
+      refreshNotifBadge();
     }
   };
 
@@ -588,6 +594,7 @@ export default function Billing() {
           </div>
         </div>
         <div className="topbar-right">
+          <NotificationBell className="icon-btn" />
           <Button variant="ghost" size="sm" onClick={() => holdBill('hold')} title="F7 - Hold Bill">
             ⏸ Hold
           </Button>

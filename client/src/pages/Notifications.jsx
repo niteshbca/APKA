@@ -4,6 +4,7 @@ import { useBranch } from '../context/BranchContext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { Button, Card, Field, Badge, Spinner } from '../components/ui';
+import { refreshNotifBadge } from '../utils/notifyBadge';
 
 const PROVIDERS = [
   { value: 'generic', label: 'Generic HTTP API (custom URL + token)' },
@@ -93,6 +94,15 @@ export default function Notifications() {
   }, [loadLogs, toast]);
 
   useEffect(() => { load(branchId); }, [branchId, load]);
+
+  // Opening this page acknowledges successful notifications so the navbar
+  // success badge clears (failures stay visible until resolved).
+  useEffect(() => {
+    if (!branchId) return;
+    api.post('/notifications/mark-seen', { branch: branchId })
+      .then(() => refreshNotifBadge())
+      .catch(() => {});
+  }, [branchId]);
 
   const setEmail = (k) => (e) => {
     const v = e.target.type === 'checkbox' ? e.target.checked : e.target.value;

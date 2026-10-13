@@ -17,6 +17,10 @@ const notificationLogSchema = new mongoose.Schema(
     provider: { type: String, trim: true },
     status: { type: String, enum: ['sent', 'failed', 'skipped'], default: 'sent', index: true },
     error: { type: String },
+    // Whether the user has acknowledged this log (used by the navbar badge).
+    // Successful sends are marked read when the Notifications page is opened;
+    // failures stay unread until resolved (e.g. a successful resend).
+    read: { type: Boolean, default: false, index: true },
     meta: { type: mongoose.Schema.Types.Mixed },
   },
   { timestamps: true }
