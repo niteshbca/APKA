@@ -13,11 +13,16 @@ const notificationSettingSchema = new mongoose.Schema(
 
     email: {
       enabled: { type: Boolean, default: false },
+      // 'smtp' | 'resend' | 'brevo' | 'sendgrid' | 'mailgun'
+      // API providers send over HTTPS and work even when SMTP ports are blocked.
+      provider: { type: String, enum: ['smtp', 'resend', 'brevo', 'sendgrid', 'mailgun'], default: 'smtp' },
       host: { type: String, trim: true, default: '' },
       port: { type: Number, default: 587 },
       secure: { type: Boolean, default: false },
       user: { type: String, trim: true, default: '' },
       password: { type: String, default: '' },
+      apiKey: { type: String, default: '' },
+      domain: { type: String, trim: true, default: '' },
       fromName: { type: String, trim: true, default: '' },
       fromEmail: { type: String, trim: true, default: '' },
       replyTo: { type: String, trim: true, default: '' },
@@ -79,7 +84,15 @@ function mask(secret) {
 
 notificationSettingSchema.methods.toSafeJSON = function () {
   const o = this.toObject();
-  o.email = { ...o.email, password: undefined, hasPassword: !!this.email?.password, passwordMask: mask(this.email?.password) };
+  o.email = {
+    ...o.email,
+    password: undefined,
+    apiKey: undefined,
+    hasPassword: !!this.email?.password,
+    passwordMask: mask(this.email?.password),
+    hasApiKey: !!this.email?.apiKey,
+    apiKeyMask: mask(this.email?.apiKey),
+  };
   o.whatsapp = { ...o.whatsapp, accessToken: undefined, hasAccessToken: !!this.whatsapp?.accessToken, tokenMask: mask(this.whatsapp?.accessToken) };
   return o;
 };

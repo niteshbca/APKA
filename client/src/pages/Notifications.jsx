@@ -12,6 +12,14 @@ const PROVIDERS = [
   { value: 'twilio', label: 'Twilio WhatsApp' },
 ];
 
+const EMAIL_PROVIDERS = [
+  { value: 'smtp', label: 'SMTP (Gmail / Zoho / cPanel …)' },
+  { value: 'resend', label: 'Resend — HTTPS API (recommended)' },
+  { value: 'brevo', label: 'Brevo / Sendinblue — HTTPS API' },
+  { value: 'sendgrid', label: 'SendGrid — HTTPS API' },
+  { value: 'mailgun', label: 'Mailgun — HTTPS API' },
+];
+
 const PLACEHOLDERS = [
   '{{businessName}}', '{{invoiceNo}}', '{{date}}', '{{customerName}}',
   '{{customerMobile}}', '{{total}}', '{{subtotal}}', '{{discount}}', '{{gstTotal}}',
@@ -19,7 +27,7 @@ const PLACEHOLDERS = [
 ];
 
 const EMPTY = {
-  email: { enabled: false, host: '', port: 587, secure: false, user: '', password: '', fromName: '', fromEmail: '', replyTo: '' },
+  email: { enabled: false, provider: 'smtp', host: '', port: 587, secure: false, user: '', password: '', apiKey: '', domain: '', fromName: '', fromEmail: '', replyTo: '' },
   whatsapp: { enabled: false, provider: 'generic', apiUrl: '', accessToken: '', instanceId: '', phoneNumberId: '', senderNumber: '' },
   autoSend: { onSale: true, onLowStock: false },
   notify: { customerEmail: true, customerWhatsapp: true, ownerEmail: false, ownerWhatsapp: false },
@@ -35,11 +43,12 @@ export default function Notifications() {
 
   const [branchId, setBranchId] = useState(activeBranch?._id || '');
   const [form, setForm] = useState(EMPTY);
-  const [meta, setMeta] = useState({ hasPassword: false, hasAccessToken: false });
+  const [meta, setMeta] = useState({ hasPassword: false, hasApiKey: false, hasAccessToken: false });
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState('');
+  const [diag, setDiag] = useState(null);
   const [preview, setPreview] = useState(null);
 
   useEffect(() => {
@@ -63,7 +72,7 @@ export default function Notifications() {
       const s = res.data.data;
       if (s) {
         setForm({
-          email: { ...EMPTY.email, ...s.email, password: '' },
+          email: { ...EMPTY.email, ...s.email, password: '', apiKey: '' },
           whatsapp: { ...EMPTY.whatsapp, ...s.whatsapp, accessToken: '' },
           autoSend: { ...EMPTY.autoSend, ...s.autoSend },
           notify: { ...EMPTY.notify, ...s.notify },
@@ -71,7 +80,7 @@ export default function Notifications() {
           ownerWhatsapp: s.ownerWhatsapp || '',
           template: { ...EMPTY.template, ...s.template },
         });
-        setMeta({ hasPassword: !!s.email?.hasPassword, hasAccessToken: !!s.whatsapp?.hasAccessToken });
+        setMeta({ hasPassword: !!s.email?.hasPassword, hasApiKey: !!s.email?.hasApiKey, hasAccessToken: !!s.whatsapp?.hasAccessToken });
       } else {
         setForm(EMPTY);
       }
@@ -102,8 +111,8 @@ export default function Notifications() {
     try {
       const res = await api.put('/notifications/settings', { ...form, branch: branchId });
       const s = res.data.data;
-      setMeta({ hasPassword: !!s.email?.hasPassword, hasAccessToken: !!s.whatsapp?.hasAccessToken });
-      setForm((f) => ({ ...f, email: { ...f.email, password: '' }, whatsapp: { ...f.whatsapp, accessToken: '' } }));
+      setMeta({ hasPassword: !!s.email?.hasPassword, hasApiKey: !!s.email?.hasApiKey, hasAccessToken: !!s.whatsapp?.hasAccessToken });
+      setForm((f) => ({ ...f, email: { ...f.email, password: '', apiKey: '' }, whatsapp: { ...f.whatsapp, accessToken: '' } }));
       toast('Notification settings saved', 'success');
     } catch (e) {
       toast(e.message, 'error');
@@ -121,6 +130,21 @@ export default function Notifications() {
       if (res.data.success) toast('Test email sent ✓', 'success');
       else toast(res.data.data?.error || res.data.data?.reason || 'Email test failed', 'error');
       loadLogs(branchId);
+    } catch (e) {
+      toast(e.message, 'error');
+    } finally {
+      setTesting('');
+    }
+  };
+
+  const diagnose = async () => {
+    setTesting('diag');
+    setDiag(null);
+    try {
+      const res = await api.post('/notifications/diagnose-email', { branch: branchId });
+      setDiag(res.data.data);
+      if (res.data.data?.anyOpen) toast('SMTP port reachable ✓', 'success');
+      else toast('SMTP ports blocked — switch to an HTTPS API provider', 'error');
     } catch (e) {
       toast(e.message, 'error');
     } finally {
@@ -171,7 +195,7 @@ export default function Notifications() {
       <div className="flex-between mb-16">
         <div>
           <h2>Notifications</h2>
-          <div className="muted small">Per-branch Email (SMTP) & WhatsApp — auto-sent on every sale</div>
+          <div className="muted small">Per-branch Email (SMTP or HTTPS API) & WhatsApp — auto-sent on every sale</div>
         </div>
         {isSuperAdmin && branches.length > 0 && (
           <select className="select" style={{ maxWidth: 260 }} value={branchId} onChange={(e) => setBranchId(e.target.value)}>
@@ -184,35 +208,85 @@ export default function Notifications() {
         <Spinner />
       ) : (
         <div className="grid-2">
-          <Card title="Email (SMTP)" action={<Badge tone={form.email.enabled ? 'success' : 'neutral'}>{form.email.enabled ? 'Enabled' : 'Disabled'}</Badge>}>
+          <Card title="Email" action={<Badge tone={form.email.enabled ? 'success' : 'neutral'}>{form.email.enabled ? 'Enabled' : 'Disabled'}</Badge>}>
             <label className="flex gap-8 mb-16" style={{ alignItems: 'center' }}>
               <input type="checkbox" checked={form.email.enabled} onChange={setEmail('enabled')} />
               Enable email notifications
             </label>
-            <div className="form-row">
-              <Field label="SMTP Host"><input className="input" placeholder="smtp.gmail.com" value={form.email.host} onChange={setEmail('host')} /></Field>
-              <Field label="Port"><input className="input" type="number" value={form.email.port} onChange={setEmail('port')} /></Field>
-            </div>
-            <div className="form-row">
-              <Field label="Email / Username"><input className="input" placeholder="shop@example.com" value={form.email.user} onChange={setEmail('user')} /></Field>
-              <Field label="Email Password / App password">
-                <input className="input" type="password" placeholder={meta.hasPassword ? '•••••• (saved)' : 'password'} value={form.email.password} onChange={setEmail('password')} />
-              </Field>
-            </div>
+            <Field label="Email Provider">
+              <select className="select" value={form.email.provider} onChange={setEmail('provider')}>
+                {EMAIL_PROVIDERS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
+              </select>
+            </Field>
+
+            {form.email.provider === 'smtp' ? (
+              <>
+                <div className="form-row">
+                  <Field label="SMTP Host"><input className="input" placeholder="smtp.gmail.com" value={form.email.host} onChange={setEmail('host')} /></Field>
+                  <Field label="Port"><input className="input" type="number" value={form.email.port} onChange={setEmail('port')} /></Field>
+                </div>
+                <div className="form-row">
+                  <Field label="Email / Username"><input className="input" placeholder="shop@example.com" value={form.email.user} onChange={setEmail('user')} /></Field>
+                  <Field label="Email Password / App password">
+                    <input className="input" type="password" placeholder={meta.hasPassword ? '•••••• (saved)' : 'password'} value={form.email.password} onChange={setEmail('password')} />
+                  </Field>
+                </div>
+                <Field label="Secure (SSL 465)">
+                  <select className="select" value={form.email.secure ? 'yes' : 'no'} onChange={(e) => setForm((f) => ({ ...f, email: { ...f.email, secure: e.target.value === 'yes' } }))}>
+                    <option value="no">No — STARTTLS (587 / 25)</option>
+                    <option value="yes">Yes — SSL (465)</option>
+                  </select>
+                </Field>
+              </>
+            ) : (
+              <>
+                <Field label="API Key">
+                  <input className="input" type="password" placeholder={meta.hasApiKey ? '•••••• (saved)' : 'paste your API key'} value={form.email.apiKey} onChange={setEmail('apiKey')} />
+                </Field>
+                {form.email.provider === 'mailgun' && (
+                  <Field label="Sending Domain (Mailgun)"><input className="input" placeholder="mg.yourdomain.com" value={form.email.domain} onChange={setEmail('domain')} /></Field>
+                )}
+              </>
+            )}
+
             <div className="form-row">
               <Field label="From Name"><input className="input" placeholder="NiteshPro Store" value={form.email.fromName} onChange={setEmail('fromName')} /></Field>
               <Field label="From Email"><input className="input" placeholder="shop@example.com" value={form.email.fromEmail} onChange={setEmail('fromEmail')} /></Field>
             </div>
             <div className="form-row">
               <Field label="Reply-To (optional)"><input className="input" value={form.email.replyTo} onChange={setEmail('replyTo')} /></Field>
-              <Field label="Secure (SSL 465)">
-                <select className="select" value={form.email.secure ? 'yes' : 'no'} onChange={(e) => setForm((f) => ({ ...f, email: { ...f.email, secure: e.target.value === 'yes' } }))}>
-                  <option value="no">No — STARTTLS (587 / 25)</option>
-                  <option value="yes">Yes — SSL (465)</option>
-                </select>
-              </Field>
             </div>
-            <Button variant="ghost" onClick={testEmail} disabled={testing === 'email'}>{testing === 'email' ? 'Sending…' : '✉️ Send Test Email'}</Button>
+
+            <div className="flex gap-8" style={{ flexWrap: 'wrap' }}>
+              <Button variant="ghost" onClick={testEmail} disabled={testing === 'email'}>{testing === 'email' ? 'Sending…' : '✉️ Send Test Email'}</Button>
+              {form.email.provider === 'smtp' && (
+                <Button variant="ghost" onClick={diagnose} disabled={testing === 'diag'}>{testing === 'diag' ? 'Checking…' : '🩺 Check Connection'}</Button>
+              )}
+            </div>
+
+            {form.email.provider !== 'smtp' && (
+              <div className="muted small mt-8">
+                API providers send over HTTPS (port 443) and work even when your network or host blocks SMTP. This fixes “SMTP connect failed: ETIMEDOUT”.
+              </div>
+            )}
+
+            {diag && (
+              <div className="mt-16">
+                <div className="muted small" style={{ marginBottom: 6 }}>{diag.hint}</div>
+                <table className="table">
+                  <thead><tr><th>Target</th><th>Result</th><th style={{ textAlign: 'right' }}>ms</th></tr></thead>
+                  <tbody>
+                    {diag.results?.map((r) => (
+                      <tr key={r.target}>
+                        <td className="small">{r.target}</td>
+                        <td><Badge tone={r.ok ? 'success' : 'danger'}>{r.ok ? 'open' : 'blocked'}</Badge> <span className="muted small">{r.note}</span></td>
+                        <td style={{ textAlign: 'right' }} className="muted small">{r.ms}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </Card>
 
           <Card title="WhatsApp" action={<Badge tone={form.whatsapp.enabled ? 'success' : 'neutral'}>{form.whatsapp.enabled ? 'Enabled' : 'Disabled'}</Badge>}>

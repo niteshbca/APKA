@@ -5,7 +5,7 @@ import { useBranch } from '../context/BranchContext';
 import { Button, Card, Modal, Field, Badge, EmptyState, Spinner } from '../components/ui';
 
 const NOTIF_EMPTY = {
-  email: { enabled: false, host: '', port: 587, secure: false, user: '', password: '', fromName: '', fromEmail: '' },
+  email: { enabled: false, provider: 'smtp', host: '', port: 587, secure: false, user: '', password: '', apiKey: '', domain: '', fromName: '', fromEmail: '' },
   whatsapp: { enabled: false, provider: 'generic', apiUrl: '', accessToken: '', instanceId: '', phoneNumberId: '', senderNumber: '' },
   autoSend: { onSale: true, onLowStock: false },
   notify: { customerEmail: true, customerWhatsapp: true, ownerEmail: false, ownerWhatsapp: false },
@@ -27,12 +27,20 @@ const WA_PROVIDERS = [
   { id: 'twilio', label: 'Twilio' },
 ];
 
+const EMAIL_PROVIDERS = [
+  { id: 'smtp', label: 'SMTP (Gmail / Zoho / cPanel…)' },
+  { id: 'resend', label: 'Resend — HTTPS API' },
+  { id: 'brevo', label: 'Brevo / Sendinblue — HTTPS API' },
+  { id: 'sendgrid', label: 'SendGrid — HTTPS API' },
+  { id: 'mailgun', label: 'Mailgun — HTTPS API' },
+];
+
 export default function Branches() {
   const [rows, setRows] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState(EMPTY);
   const [editingId, setEditingId] = useState(null);
-  const [notifMeta, setNotifMeta] = useState({ hasPassword: false, hasAccessToken: false });
+  const [notifMeta, setNotifMeta] = useState({ hasPassword: false, hasApiKey: false, hasAccessToken: false });
   const { toast } = useToast();
   const { refresh } = useBranch();
 
@@ -45,13 +53,13 @@ export default function Branches() {
   const openAdd = () => {
     setEditingId(null);
     setForm(EMPTY);
-    setNotifMeta({ hasPassword: false, hasAccessToken: false });
+    setNotifMeta({ hasPassword: false, hasApiKey: false, hasAccessToken: false });
     setShowModal(true);
   };
 
   const openEdit = async (b) => {
     setEditingId(b._id);
-    setNotifMeta({ hasPassword: false, hasAccessToken: false });
+    setNotifMeta({ hasPassword: false, hasApiKey: false, hasAccessToken: false });
     setForm({
       name: b.name || '',
       code: b.code || '',
@@ -72,11 +80,11 @@ export default function Branches() {
       const r = await api.get('/notifications/settings', { params: { branch: b._id } });
       const s = r.data.data;
       if (s) {
-        setNotifMeta({ hasPassword: !!s.email?.hasPassword, hasAccessToken: !!s.whatsapp?.hasAccessToken });
+        setNotifMeta({ hasPassword: !!s.email?.hasPassword, hasApiKey: !!s.email?.hasApiKey, hasAccessToken: !!s.whatsapp?.hasAccessToken });
         setForm((f) => ({
           ...f,
           notifications: {
-            email: { ...NOTIF_EMPTY.email, ...(s.email || {}) },
+            email: { ...NOTIF_EMPTY.email, ...(s.email || {}), password: '', apiKey: '' },
             whatsapp: { ...NOTIF_EMPTY.whatsapp, ...(s.whatsapp || {}) },
             autoSend: { ...NOTIF_EMPTY.autoSend, ...(s.autoSend || {}) },
             notify: { ...NOTIF_EMPTY.notify, ...(s.notify || {}) },
@@ -224,31 +232,50 @@ export default function Branches() {
           <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12, marginTop: 4 }}>
             <label className="flex gap-8" style={{ alignItems: 'center', fontWeight: 600, marginBottom: 8 }}>
               <input type="checkbox" checked={!!n.email.enabled} onChange={setNotif('email', 'enabled')} />
-              ✉️ Email (SMTP) enable
+              ✉️ Email enable
             </label>
-            <div className="form-row">
-              <Field label="SMTP Host"><input className="input" value={n.email.host} onChange={setNotif('email', 'host')} placeholder="smtp.gmail.com" /></Field>
-              <Field label="Port"><input className="input" type="number" value={n.email.port} onChange={setNotif('email', 'port')} placeholder="587" /></Field>
-            </div>
-            <div className="form-row">
-              <Field label="Email / Username"><input className="input" value={n.email.user} onChange={setNotif('email', 'user')} placeholder="shop@gmail.com" /></Field>
-              <Field label="App Password"><input className="input" type="password" value={n.email.password} onChange={setNotif('email', 'password')} placeholder={notifMeta.hasPassword ? '•••••• (saved — leave blank to keep)' : '16-char app password'} /></Field>
-            </div>
-            <div className="muted small" style={{ marginTop: -4, marginBottom: 8 }}>
-              {notifMeta.hasPassword
-                ? 'App password pehle se saved hai. Badalna ho tabhi naya type karein.'
-                : 'Gmail ke liye Google Account → Security → App passwords se 16-character password banayein (normal password kaam nahi karega).'}
-            </div>
+            <Field label="Email Provider">
+              <select className="select" value={n.email.provider || 'smtp'} onChange={setNotif('email', 'provider')}>
+                {EMAIL_PROVIDERS.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
+              </select>
+            </Field>
+            {(n.email.provider || 'smtp') === 'smtp' ? (
+              <>
+                <div className="form-row">
+                  <Field label="SMTP Host"><input className="input" value={n.email.host} onChange={setNotif('email', 'host')} placeholder="smtp.gmail.com" /></Field>
+                  <Field label="Port"><input className="input" type="number" value={n.email.port} onChange={setNotif('email', 'port')} placeholder="587" /></Field>
+                </div>
+                <div className="form-row">
+                  <Field label="Email / Username"><input className="input" value={n.email.user} onChange={setNotif('email', 'user')} placeholder="shop@gmail.com" /></Field>
+                  <Field label="App Password"><input className="input" type="password" value={n.email.password} onChange={setNotif('email', 'password')} placeholder={notifMeta.hasPassword ? '•••••• (saved — leave blank to keep)' : '16-char app password'} /></Field>
+                </div>
+                <div className="muted small" style={{ marginTop: -4, marginBottom: 8 }}>
+                  {notifMeta.hasPassword
+                    ? 'App password pehle se saved hai. Badalna ho tabhi naya type karein.'
+                    : 'Gmail ke liye Google Account → Security → App passwords se 16-character password banayein (normal password kaam nahi karega).'}
+                </div>
+                <Field label="Security">
+                  <select className="select" value={n.email.secure ? 'ssl' : 'starttls'} onChange={(e) => setNotif('email', 'secure')({ target: { type: 'checkbox', checked: e.target.value === 'ssl' } })}>
+                    <option value="starttls">STARTTLS (587 / 25)</option>
+                    <option value="ssl">SSL/TLS (465)</option>
+                  </select>
+                </Field>
+              </>
+            ) : (
+              <>
+                <Field label="API Key"><input className="input" type="password" value={n.email.apiKey} onChange={setNotif('email', 'apiKey')} placeholder={notifMeta.hasApiKey ? '•••••• (saved — leave blank to keep)' : 'paste API key'} /></Field>
+                {(n.email.provider || '') === 'mailgun' && (
+                  <Field label="Sending Domain (Mailgun)"><input className="input" value={n.email.domain} onChange={setNotif('email', 'domain')} placeholder="mg.yourdomain.com" /></Field>
+                )}
+                <div className="muted small" style={{ marginBottom: 8 }}>
+                  HTTPS API providers firewalls ke peeche bhi kaam karte hain (SMTP ports block hone par bhi) — “SMTP connect failed” ka pakka fix.
+                </div>
+              </>
+            )}
             <div className="form-row">
               <Field label="From Name"><input className="input" value={n.email.fromName} onChange={setNotif('email', 'fromName')} placeholder="My Store" /></Field>
               <Field label="From Email"><input className="input" value={n.email.fromEmail} onChange={setNotif('email', 'fromEmail')} placeholder="billing@store.com" /></Field>
             </div>
-            <Field label="Security">
-              <select className="select" value={n.email.secure ? 'ssl' : 'starttls'} onChange={(e) => setNotif('email', 'secure')({ target: { type: 'checkbox', checked: e.target.value === 'ssl' } })}>
-                <option value="starttls">STARTTLS (587 / 25)</option>
-                <option value="ssl">SSL/TLS (465)</option>
-              </select>
-            </Field>
           </div>
 
           <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12, marginTop: 12 }}>

@@ -73,6 +73,22 @@ router.post('/test-email', requireRoles('superadmin', 'admin'), async (req, res,
   }
 });
 
+/**
+ * Diagnose email connectivity: probes the configured SMTP host on each common
+ * port from THIS server so the admin can see whether outbound SMTP is blocked
+ * and should switch to an HTTPS API provider.
+ */
+router.post('/diagnose-email', requireRoles('superadmin', 'admin'), async (req, res, next) => {
+  try {
+    const branchId = resolveBranchId(req);
+    if (!branchId) return res.status(400).json({ success: false, message: 'Branch is required' });
+    const result = await notificationService.diagnoseEmail(branchId);
+    res.json({ success: true, data: result });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.post('/test-whatsapp', requireRoles('superadmin', 'admin'), async (req, res, next) => {
   try {
     const branchId = resolveBranchId(req);
@@ -111,19 +127,10 @@ router.post('/resend/:logId', requireRoles('superadmin', 'admin'), async (req, r
     const to = req.body.to || entry.to;
     let result;
     if (entry.channel === 'email') {
-      const email = settings.email;
-      const { sendMail } = require('../services/mailer');
-      try {
-        await sendMail({
-          host: email.host, port: Number(email.port) || 587, secure: !!email.secure,
-          user: email.user, pass: email.password, from: email.fromEmail || email.user,
-          fromName: email.fromName, to, subject: entry.subject, text: entry.message,
-          replyTo: email.replyTo || undefined,
-        });
-        result = { status: 'sent' };
-      } catch (e) {
-        result = { status: 'failed', error: e.message };
-      }
+      result = await notificationService.sendEmail(
+        { ...settings.toObject(), email: { ...(settings.email || {}), enabled: true } },
+        { to, subject: entry.subject, bodyText: entry.message, vars: { businessName: (settings.email && settings.email.fromName) || '' } }
+      );
     } else {
       result = await notificationService.sendWhatsapp(
         settings.toObject(),

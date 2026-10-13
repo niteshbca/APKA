@@ -75,11 +75,15 @@ export default function Login() {
               Billing, inventory, accounting and staff — an international-grade
               point-of-sale built for retail that never stops.
             </p>
+            <div className="login-mode-badges">
+              <span className="mode-badge online">🌐 Online — Cloud Sync</span>
+              <span className="mode-badge office">🏢 Office / Offline Mode</span>
+            </div>
             <ul className="login-features">
               <li><span className="feat-ico">⚡</span> Lightning-fast billing &amp; barcode scanning</li>
               <li><span className="feat-ico">📦</span> Real-time multi-branch inventory</li>
               <li><span className="feat-ico">🧾</span> GST invoices &amp; complete accounting</li>
-              <li><span className="feat-ico">📊</span> Insights, work reports &amp; audit trail</li>
+              <li><span className="feat-ico">🛰️</span> Works online <b>and</b> offline — data auto-syncs back</li>
             </ul>
           </div>
 
@@ -105,6 +109,11 @@ export default function Login() {
               {mode === 'password'
                 ? 'Sign in to your NiteshPro POS workspace'
                 : 'Enter your quick login PIN'}
+            </div>
+            <div className="login-mode-note">
+              <span className="mode-badge online">🌐 Online</span>
+              <span className="mode-badge office">🏢 Offline / Office Mode</span>
+              <span className="mode-note-text">Donon support — internet nahi ho to billing phir bhi chalti rahegi.</span>
             </div>
             <div className="login-trial-chip"><b>🎁 15 Days Free</b> · full premium access</div>
           </div>

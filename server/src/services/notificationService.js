@@ -2,7 +2,7 @@ const NotificationSetting = require('../models/NotificationSetting');
 const NotificationLog = require('../models/NotificationLog');
 const Branch = require('../models/Branch');
 const Setting = require('../models/Setting');
-const { sendMail } = require('./mailer');
+const { sendMail, diagnose } = require('./mailer');
 
 /* ------------------------------- formatting ------------------------------- */
 
@@ -130,16 +130,24 @@ async function log(entry) {
 
 async function sendEmail(settings, { to, subject, bodyText, vars }) {
   const email = settings.email || {};
+  const provider = String(email.provider || 'smtp').toLowerCase();
   if (!email.enabled) return { status: 'skipped', reason: 'email disabled for branch' };
-  if (!email.host) return { status: 'skipped', reason: 'SMTP host not configured' };
+  if (provider === 'smtp') {
+    if (!email.host) return { status: 'skipped', reason: 'SMTP host not configured' };
+  } else if (!email.apiKey) {
+    return { status: 'skipped', reason: `${provider} API key not configured` };
+  }
   if (!to) return { status: 'skipped', reason: 'no recipient email' };
   try {
     await sendMail({
+      provider,
       host: email.host,
       port: Number(email.port) || 587,
       secure: !!email.secure,
       user: email.user,
       pass: email.password,
+      apiKey: email.apiKey,
+      domain: email.domain,
       from: email.fromEmail || email.user,
       fromName: email.fromName || (vars && vars.businessName) || '',
       to,
@@ -148,10 +156,10 @@ async function sendEmail(settings, { to, subject, bodyText, vars }) {
       html: buildEmailHtml(vars || {}, bodyText),
       replyTo: email.replyTo || undefined,
     });
-    return { status: 'sent' };
+    return { status: 'sent', provider };
   } catch (err) {
     const reason = describeError(err);
-    console.error('[notify] email send failed:', reason, '| host:', email.host, '| user:', email.user);
+    console.error('[notify] email send failed:', reason, '| provider:', provider, '| host:', email.host, '| user:', email.user);
     return { status: 'failed', error: reason };
   }
 }
@@ -257,11 +265,14 @@ async function updateSettings(branchId, data, userId) {
 
   settings.email = {
     enabled: email.enabled !== undefined ? !!email.enabled : settings.email.enabled,
+    provider: email.provider !== undefined ? email.provider : settings.email.provider,
     host: email.host !== undefined ? email.host : settings.email.host,
     port: email.port !== undefined ? Number(email.port) || 587 : settings.email.port,
     secure: email.secure !== undefined ? !!email.secure : settings.email.secure,
     user: email.user !== undefined ? email.user : settings.email.user,
     password: pickSecret(email.password, settings.email.password),
+    apiKey: pickSecret(email.apiKey, settings.email.apiKey),
+    domain: email.domain !== undefined ? email.domain : settings.email.domain,
     fromName: email.fromName !== undefined ? email.fromName : settings.email.fromName,
     fromEmail: email.fromEmail !== undefined ? email.fromEmail : settings.email.fromEmail,
     replyTo: email.replyTo !== undefined ? email.replyTo : settings.email.replyTo,
@@ -324,13 +335,14 @@ async function dispatchSaleNotifications({ sale, invoice, branchId, customer }) 
       (invoice && invoice.customerMobile) ||
       customer?.mobile ||
       '';
+    const emailProvider = String(settings.email.provider || 'smtp').toLowerCase();
 
     const tasks = [];
     if (settings.notify.customerEmail && recipientEmail) {
       tasks.push(
         (async () => {
           const r = await sendEmail(settings, { to: recipientEmail, subject: emailSubject, bodyText: emailBody, vars });
-          await log({ branch: branchId, sale: sale?._id, invoiceNo: vars.invoiceNo, channel: 'email', to: recipientEmail, subject: emailSubject, message: emailBody, provider: 'smtp', status: r.status, error: r.error || r.reason });
+          await log({ branch: branchId, sale: sale?._id, invoiceNo: vars.invoiceNo, channel: 'email', to: recipientEmail, subject: emailSubject, message: emailBody, provider: emailProvider, status: r.status, error: r.error || r.reason });
         })()
       );
     }
@@ -338,7 +350,7 @@ async function dispatchSaleNotifications({ sale, invoice, branchId, customer }) 
       tasks.push(
         (async () => {
           const r = await sendEmail(settings, { to: settings.ownerEmail, subject: '[Copy] ' + emailSubject, bodyText: emailBody, vars });
-          await log({ branch: branchId, sale: sale?._id, invoiceNo: vars.invoiceNo, channel: 'email', to: settings.ownerEmail, subject: emailSubject, message: emailBody, provider: 'smtp', status: r.status, error: r.error || r.reason, meta: { owner: true } });
+          await log({ branch: branchId, sale: sale?._id, invoiceNo: vars.invoiceNo, channel: 'email', to: settings.ownerEmail, subject: emailSubject, message: emailBody, provider: emailProvider, status: r.status, error: r.error || r.reason, meta: { owner: true } });
         })()
       );
     }
@@ -397,7 +409,7 @@ async function sendInvoiceNow(branchId, { channel = 'both', email, phone, invoic
       const to = email || vars.customerEmail || '';
       const r = await sendEmail(forced, { to, subject: emailSubject, bodyText: emailBody, vars });
       results.email = { ...r, to };
-      await log({ branch: branchId, invoiceNo: vars.invoiceNo, channel: 'email', to, subject: emailSubject, message: emailBody, provider: 'smtp', status: r.status, error: r.error || r.reason, meta: { manual: true } });
+      await log({ branch: branchId, invoiceNo: vars.invoiceNo, channel: 'email', to, subject: emailSubject, message: emailBody, provider: String(raw.email.provider || 'smtp').toLowerCase(), status: r.status, error: r.error || r.reason, meta: { manual: true } });
     }
 
     if (channel === 'whatsapp' || channel === 'both') {
@@ -417,13 +429,50 @@ async function sendInvoiceNow(branchId, { channel = 'both', email, phone, invoic
 async function testEmail(branchId, to) {
   const settings = await ensureSettings(branchId);
   const email = settings.email || {};
-  if (!email.host) return { status: 'skipped', reason: 'SMTP host not configured' };
+  const provider = String(email.provider || 'smtp').toLowerCase();
+  if (provider === 'smtp' && !email.host) return { status: 'skipped', reason: 'SMTP host not configured' };
+  if (provider !== 'smtp' && !email.apiKey) return { status: 'skipped', reason: `${provider} API key not configured` };
   const vars = { businessName: email.fromName || 'POS', invoiceNo: 'TEST-0001', date: new Date().toLocaleString(), customerName: 'Test', total: inr(0), subtotal: inr(0), discount: inr(0), gstTotal: inr(0), paymentMode: 'CASH', items: 'This is a test notification from your POS.', cashierName: 'system' };
   const subject = `POS test email — ${vars.businessName}`;
-  const body = 'This is a test email sent from your POS notification settings. If you received it, your SMTP configuration is correct.';
+  const body = 'This is a test email sent from your POS notification settings. If you received it, your email configuration is correct.';
   const r = await sendEmail({ ...settings.toObject(), email: { ...email, enabled: true } }, { to: to || email.fromEmail || email.user, subject, bodyText: body, vars });
-  await log({ branch: branchId, channel: 'email', to: to || email.fromEmail || email.user, subject, message: body, provider: 'smtp', status: r.status, error: r.error || r.reason, meta: { test: true } });
+  await log({ branch: branchId, channel: 'email', to: to || email.fromEmail || email.user, subject, message: body, provider, status: r.status, error: r.error || r.reason, meta: { test: true } });
   return r;
+}
+
+/**
+ * Probes SMTP reachability for the branch (which ports are open from THIS
+ * server) so the admin can tell whether their network is blocking SMTP and
+ * should switch to an HTTPS email API provider instead.
+ */
+async function diagnoseEmail(branchId) {
+  const settings = await ensureSettings(branchId);
+  const email = settings.email || {};
+  const provider = String(email.provider || 'smtp').toLowerCase();
+  if (provider !== 'smtp') {
+    return {
+      provider,
+      host: email.host || '',
+      results: [],
+      anyOpen: true,
+      hint: `${provider} sends over HTTPS (port 443), so SMTP port blocking does not apply. Use "Send Test Email" to confirm your API key and sender.`,
+    };
+  }
+  const results = await diagnose({
+    host: email.host,
+    port: Number(email.port) || 587,
+    secure: !!email.secure,
+  });
+  const anyOpen = results.some((r) => r.ok);
+  return {
+    provider,
+    host: email.host || '',
+    results,
+    anyOpen,
+    hint: anyOpen
+      ? 'SMTP port reachable — if sends still fail, re-check the username/app-password.'
+      : 'All SMTP ports were blocked from the server. Switch Provider to Resend / Brevo / SendGrid (HTTPS) — it always works behind firewalls.',
+  };
 }
 
 async function testWhatsapp(branchId, to) {
@@ -441,7 +490,9 @@ module.exports = {
   ensureSettings,
   updateSettings,
   sendInvoiceNow,
+  sendEmail,
   testEmail,
+  diagnoseEmail,
   testWhatsapp,
   sendWhatsapp,
   renderTemplate,

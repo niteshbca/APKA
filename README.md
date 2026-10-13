@@ -262,7 +262,46 @@ Statuses shown in the sidebar: `● ONLINE`, `● OFFLINE`, `⟳ SYNCING`, `✓ 
 - **Invoices**: unique invoice number, business details, customer details, line items, totals, payment mode, date/time, printable.
 - **Dashboard**: today's sales, invoices, profit, products, low stock, cash/UPI/card collection, **7-day sales trend, top products, payment split, per-branch stats**.
 - **Reports**: daily & monthly sales, product-wise, customer-wise, payment-wise, profit, stock, date-range filter.
+- **Notifications**: per-branch Email + WhatsApp on every sale. Email works over **SMTP** *or* **HTTPS API providers** (Resend / Brevo / SendGrid / Mailgun) — the API option is the fix for blocked ports (`SMTP connect failed: ETIMEDOUT`). Built-in **connection diagnostics** (`🩺 Check Connection`) and a delivery log with resend.
+- **Backup**: manual JSON snapshots **and** an automatic server-side scheduler (per-company interval + retention), with one-click restore.
 - **License Admin panel** (superadmin): create/renew/suspend/activate licenses, set max devices, view customers & bound devices, block devices.
+
+> 📘 **Full step-by-step usage guide (Hindi + English): [`docs/USER-GUIDE.md`](docs/USER-GUIDE.md)** — installation, daily billing, email troubleshooting, backup, mobile/desktop apps.
+
+---
+
+## 7.1 Email setup & fixing "SMTP connect failed: ETIMEDOUT"
+
+Many networks, ISPs and hosting providers (e.g. Render free tier) **block outbound
+SMTP ports (465 / 587 / 25)**, which produces exactly this error. The most reliable
+fix is to send email through an **HTTPS API provider** instead of SMTP.
+
+In the app: **Notifications → Email → Email Provider**.
+
+| Provider | API key from | Notes |
+| --- | --- | --- |
+| **Resend** (recommended) | resend.com → API Keys | verify your sending domain |
+| **Brevo / Sendinblue** | brevo.com → SMTP & API → API Keys | verify sender email |
+| **SendGrid** | sendgrid.com → API Keys | verify sender |
+| **Mailgun** | mailgun.com → API Keys | enter the sending domain |
+| **SMTP** | your mail host | Gmail needs a 16-char **App Password** |
+
+Then click **✉️ Send Test Email**. If you keep SMTP, click **🩺 Check Connection**
+to see which ports are open from the server (green = open, red = blocked).
+
+The mailer also retries alternative SMTP ports automatically (465 → 587 → 2525 → 25)
+before giving up, using a dependency-free SMTP client plus `fetch()` for the API providers.
+
+---
+
+## 7.2 Automatic backups
+
+The API server runs a background scheduler (`server/src/services/backupScheduler.js`)
+that snapshots each company's data on a configurable interval and prunes old files.
+Configure it in the app under **Backup & Restore → Automatic Backup** (enable, set
+hours + how many to keep, or click **Back up now**). Snapshots are stored in
+`server/backups/`. `BACKUP_TICK_MS` (default 5 min) controls how often the scheduler
+checks whether a backup is due.
 
 ---
 

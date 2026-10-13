@@ -42,6 +42,7 @@ const workReportRoutes = require('./routes/workReports');
 const auditRoutes = require('./routes/audit');
 const backupRoutes = require('./routes/backup');
 const cloudSyncWorker = require('./services/cloudSyncWorker');
+const backupScheduler = require('./services/backupScheduler');
 const keyService = require('./services/keyService');
 const licenseService = require('./services/licenseService');
 
@@ -154,6 +155,7 @@ async function start() {
   } else {
     console.log('[cloud-sync] disabled (set CLOUD_SYNC_URL + CLOUD_SYNC_TOKEN to enable)');
   }
+  backupScheduler.start();
   return server;
 }
 

@@ -20,6 +20,11 @@ const settingsSchema = new mongoose.Schema(
     financialYear: { type: String, default: '' },
     allowNegativeStock: { type: Boolean, default: false },
     labelDefaults: { type: mongoose.Schema.Types.Mixed, default: {} },
+    // Automatic backup configuration (per company). Managed by backupScheduler.
+    autoBackup: {
+      type: mongoose.Schema.Types.Mixed,
+      default: () => ({ enabled: false, intervalHours: 6, keep: 14, lastRunAt: null, lastFile: null }),
+    },
   },
   { timestamps: true }
 );

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import api from '../api/axios';
 import { useToast } from '../context/ToastContext';
-import { Button, Card, Badge, Spinner, EmptyState } from '../components/ui';
+import { Button, Card, Badge, Spinner, EmptyState, Field } from '../components/ui';
 
 function bytes(n) {
   if (!n) return '0 B';
@@ -20,15 +20,39 @@ function when(ts) {
 export default function Backup() {
   const [rows, setRows] = useState(null);
   const [busy, setBusy] = useState('');
+  const [auto, setAuto] = useState(null);
+  const [autoBusy, setAutoBusy] = useState('');
   const { toast } = useToast();
 
   const load = useCallback(() => {
     api.get('/backup')
       .then((r) => setRows(r.data.data || []))
       .catch((e) => { setRows([]); toast(e.message, 'error'); });
+    api.get('/backup/auto')
+      .then((r) => setAuto(r.data.data))
+      .catch(() => setAuto(null));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { load(); }, [load]);
+
+  const saveAuto = async () => {
+    if (!auto) return;
+    setAutoBusy('save');
+    try {
+      const r = await api.put('/backup/auto', auto);
+      setAuto(r.data.data);
+      toast('Auto-backup settings saved', 'success');
+    } catch (e) { toast(e.message, 'error'); } finally { setAutoBusy(''); }
+  };
+
+  const runNow = async () => {
+    setAutoBusy('run');
+    try {
+      const r = await api.post('/backup/auto/run-now');
+      toast(`Backup created · ${r.data.data.documents} documents`, 'success');
+      load();
+    } catch (e) { toast(e.message, 'error'); } finally { setAutoBusy(''); }
+  };
 
   const create = async () => {
     setBusy('create');
@@ -73,6 +97,36 @@ export default function Backup() {
 
   return (
     <div>
+      {auto && (
+        <Card className="mb-16" title="Automatic Backup" action={<Badge tone={auto.enabled ? 'success' : 'neutral'}>{auto.enabled ? 'ON' : 'OFF'}</Badge>}>
+          <div className="muted small mb-16">
+            Server par chalne wala scheduler — aapki company ka data har interval par apne aap snapshot leta hai (internet/office band ho to bhi server chalta rahe).
+          </div>
+          <label className="flex gap-8 mb-16" style={{ alignItems: 'center' }}>
+            <input type="checkbox" checked={!!auto.enabled} onChange={(e) => setAuto({ ...auto, enabled: e.target.checked })} />
+            Enable automatic backups
+          </label>
+          <div className="form-row">
+            <Field label="Every (hours)">
+              <input className="input" type="number" min="1" max="168" value={auto.intervalHours}
+                onChange={(e) => setAuto({ ...auto, intervalHours: e.target.value })} />
+            </Field>
+            <Field label="Keep last N backups">
+              <input className="input" type="number" min="1" max="365" value={auto.keep}
+                onChange={(e) => setAuto({ ...auto, keep: e.target.value })} />
+            </Field>
+          </div>
+          <div className="muted small mb-16">
+            Last run: {auto.lastRunAt ? when(auto.lastRunAt) : '—'}
+            {auto.lastFile ? <> · <code>{auto.lastFile}</code></> : null}
+          </div>
+          <div className="flex gap-8" style={{ flexWrap: 'wrap' }}>
+            <Button onClick={saveAuto} disabled={autoBusy === 'save'}>{autoBusy === 'save' ? 'Saving…' : 'Save Auto-backup'}</Button>
+            <Button variant="ghost" onClick={runNow} disabled={autoBusy === 'run'}>{autoBusy === 'run' ? 'Running…' : '⚡ Back up now'}</Button>
+          </div>
+        </Card>
+      )}
+
       <div className="flex-between mb-16">
         <div>
           <h2>Backup & Restore</h2>

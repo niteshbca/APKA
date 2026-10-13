@@ -24,6 +24,7 @@ router.get('/status', view, async (req, res, next) => {
         },
         email: {
           enabled: !!(settings && settings.email && settings.email.enabled),
+          provider: settings && settings.email ? settings.email.provider || 'smtp' : 'smtp',
           host: settings && settings.email ? settings.email.host : '',
           from: settings && settings.email ? settings.email.fromEmail : '',
         },
