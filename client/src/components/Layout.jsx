@@ -85,6 +85,7 @@ export default function Layout({ children }) {
   const [sideOpen, setSideOpen] = useState(false);
   const [closedGroups, setClosedGroups] = useState([]);
   const [theme, setTheme] = useState(() => localStorage.getItem('pos_theme') || 'light');
+  const [now, setNow] = useState(() => new Date());
   const searchRef = useRef(null);
 
   const navModuleKeys = NAV.map((n) => n.module).filter(Boolean);
@@ -140,6 +141,12 @@ export default function Layout({ children }) {
     const onChange = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener('fullscreenchange', onChange);
     return () => document.removeEventListener('fullscreenchange', onChange);
+  }, []);
+
+  // Live clock — current date & time in the top bar.
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
   }, []);
 
   // Close any open popover when the route changes.
@@ -332,6 +339,10 @@ export default function Layout({ children }) {
           </div>
 
           <div className="flex gap-8" style={{ alignItems: 'center' }}>
+            <div className="topbar-clock hide-md" title={now.toString()}>
+              <span className="tc-date">{now.toLocaleDateString(undefined, { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })}</span>
+              <span className="tc-time">{now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+            </div>
             {canSwitchBranch && branches.length > 0 ? (
               <div style={{ position: 'relative' }}>
                 <button className="icon-btn" onClick={() => { setBranchMenu((s) => !s); setUserMenu(false); }} title="Switch branch">
