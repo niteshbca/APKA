@@ -30,6 +30,7 @@ export default function Settings() {
       };
       setForm(clean);
       if (s.accentColor) { applyAccent(s.accentColor); setAccent(s.accentColor); }
+      try { localStorage.setItem('pos_business_type', clean.businessType); } catch { /* ignore */ }
       db.put('settings', { key: 'business_settings', ...clean });
     }).catch((e) => toast(e.message, 'error'));
   }, []);
@@ -66,6 +67,10 @@ export default function Settings() {
 
   const chooseType = (key) => {
     setForm((f) => ({ ...f, businessType: key }));
+    try {
+      localStorage.setItem('pos_business_type', key);
+      window.dispatchEvent(new CustomEvent('pos:business-type', { detail: key }));
+    } catch { /* ignore */ }
     api.put('/settings', { businessType: key }).catch(() => {});
   };
 

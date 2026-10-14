@@ -2102,5 +2102,83 @@ img, video, canvas { max-width: 100%; height: auto; }
 .biz-ico { font-size: 22px; line-height: 1; }
 .biz-label { font-weight: 700; font-size: 13px; }
 
+/* ============================================================================
+   V4 — Fully SOLID brand colour for the shell. Previously the sidebar and
+   navbar used --grad-primary which fades the accent into a lighter tint
+   (mix with white) — that light end looked like a whitish shadow at the top
+   of the bar / bottom of the sidebar. Using the solid --primary removes it,
+   so choosing "Blue" now shows a full solid blue.
+   ============================================================================ */
+.sidebar { background: var(--primary) !important; border-right: none !important; }
+.sidebar .brand { border-bottom-color: rgba(255, 255, 255, 0.18) !important; }
+.brand-mark-sm,
+[data-theme="dark"] .brand-mark-sm {
+  background: rgba(255, 255, 255, 0.22) !important;
+  box-shadow: none !important;
+  color: #fff !important;
+}
+.topbar {
+  background: var(--primary) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-bottom: none !important;
+  box-shadow: none !important;
+}
+
+/* Sidebar module text — pure white and larger. */
+.sidebar a { color: #fff !important; font-size: 15.5px !important; }
+.sidebar a:hover { color: #fff !important; background: rgba(255, 255, 255, 0.14) !important; }
+.sidebar a.active { color: #fff !important; }
+.sidebar .nav-label { font-weight: 700; }
+.sidebar .nav-group-title { color: rgba(255, 255, 255, 0.78) !important; font-size: 11.5px !important; }
+.sidebar .nav-group-title:hover { color: #fff !important; }
+
+/* Sidebar search — white background, dark text. */
+.sidebar .ss-input,
+[data-theme="dark"] .sidebar .ss-input {
+  background: #fff !important; color: #0f172a !important;
+  border-color: transparent !important; font-size: 13.5px !important;
+}
+.sidebar .ss-input::placeholder { color: #94a3b8 !important; }
+.sidebar .ss-input:focus { background: #fff !important; box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5) !important; }
+.sidebar .ss-ico { color: #64748b !important; }
+
+/* Navbar text / controls — white on the brand colour. */
+.topbar-title b { color: #fff !important; }
+.topbar-title span { color: rgba(255, 255, 255, 0.82) !important; }
+.topbar .menu-btn { color: #fff !important; background: rgba(255, 255, 255, 0.16) !important; border-color: transparent !important; }
+.topbar .icon-btn { background: rgba(255, 255, 255, 0.16) !important; border-color: transparent !important; }
+.topbar .icon-btn:hover { background: rgba(255, 255, 255, 0.3) !important; border-color: transparent !important; }
+.topbar .icon-btn .dot { box-shadow: 0 0 0 2px var(--primary) !important; }
+.topbar .user-chip { background: rgba(255, 255, 255, 0.16) !important; border-color: transparent !important; }
+.topbar .user-chip:hover { background: rgba(255, 255, 255, 0.3) !important; border-color: transparent !important; }
+.topbar .user-chip .user-name { color: #fff !important; }
+.topbar .user-chip .muted { color: rgba(255, 255, 255, 0.85) !important; }
+.topbar .badge { background: rgba(255, 255, 255, 0.18) !important; color: #fff !important; }
+.topbar-clock { border-right-color: rgba(255, 255, 255, 0.3) !important; }
+.topbar-clock .tc-date { color: rgba(255, 255, 255, 0.8) !important; }
+.topbar-clock .tc-time { color: #fff !important; }
+
+/* Navbar search — white text and larger. */
+.topbar .cmd-input,
+[data-theme="dark"] .topbar .cmd-input {
+  background: rgba(255, 255, 255, 0.18) !important; color: #fff !important;
+  border-color: transparent !important; font-size: 15px !important;
+}
+.topbar .cmd-input::placeholder { color: rgba(255, 255, 255, 0.8) !important; }
+.topbar .cmd-input:focus { background: rgba(255, 255, 255, 0.26) !important; border-color: rgba(255, 255, 255, 0.6) !important; }
+.topbar .cmd-ico { color: rgba(255, 255, 255, 0.85) !important; }
+
+/* Brand / business-type logo shown in the mobile topbar. */
+.topbar-brand { display: none; align-items: center; gap: 8px; color: #fff; font-weight: 800; font-size: 15px; white-space: nowrap; }
+.topbar-brand .tb-logo {
+  width: 30px; height: 30px; border-radius: 9px; font-size: 16px;
+  background: rgba(255, 255, 255, 0.22); display: inline-flex; align-items: center; justify-content: center;
+}
+@media (max-width: 768px) {
+  .topbar-brand { display: inline-flex; }
+  .topbar-title { display: none; }
+}
+
 
 

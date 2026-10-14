@@ -5,6 +5,8 @@ import { useSync } from '../context/SyncContext';
 import { useBranch } from '../context/BranchContext';
 import { useModules } from '../context/ModulesContext';
 import NotificationBell from './NotificationBell';
+import api from '../api/axios';
+import { getBusinessType } from '../utils/businessTypes';
 
 // Ordered sidebar sections — gives the app a professional, scannable layout.
 const GROUP_ORDER = ['Overview', 'Sales', 'Inventory', 'Finance', 'People', 'Operations', 'Marketing', 'Intelligence', 'Administration'];
@@ -86,7 +88,12 @@ export default function Layout({ children }) {
   const [closedGroups, setClosedGroups] = useState([]);
   const [theme, setTheme] = useState(() => localStorage.getItem('pos_theme') || 'light');
   const [now, setNow] = useState(() => new Date());
+  const [bizType, setBizType] = useState(() => {
+    try { return localStorage.getItem('pos_business_type') || 'general'; } catch { return 'general'; }
+  });
   const searchRef = useRef(null);
+
+  const bizIcon = getBusinessType(bizType).icon;
 
   const navModuleKeys = NAV.map((n) => n.module).filter(Boolean);
   const visible = [
@@ -133,6 +140,22 @@ export default function Layout({ children }) {
     const onChange = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener('fullscreenchange', onChange);
     return () => document.removeEventListener('fullscreenchange', onChange);
+  }, []);
+
+  // Business type drives the app logo/icon (Kirana 🛒, Pharmacy 💊, …).
+  useEffect(() => {
+    api.get('/settings').then((r) => {
+      const bt = (r.data && r.data.data && r.data.data.businessType) || 'general';
+      setBizType(bt);
+      try { localStorage.setItem('pos_business_type', bt); } catch { /* ignore */ }
+    }).catch(() => {});
+    const onType = (e) => setBizType((e && e.detail) || localStorage.getItem('pos_business_type') || 'general');
+    window.addEventListener('pos:business-type', onType);
+    window.addEventListener('storage', onType);
+    return () => {
+      window.removeEventListener('pos:business-type', onType);
+      window.removeEventListener('storage', onType);
+    };
   }, []);
 
   // Live clock — current date & time in the top bar.
@@ -201,7 +224,7 @@ export default function Layout({ children }) {
     <div className={`app-shell ${collapsed ? 'sidebar-collapsed' : ''}`}>
       <aside className={`sidebar ${menuOpen ? 'open' : ''}`}>
         <div className="brand" onClick={() => collapsed && setCollapsed(false)} title={collapsed ? 'Expand sidebar' : ''} style={collapsed ? { cursor: 'pointer' } : undefined}>
-          <span className="brand-mark-sm">🛒</span>
+          <span className="brand-mark-sm">{bizIcon}</span>
           <span className="brand-text">
             <b>NiteshPro</b>
             <span>Point of Sale</span>
@@ -278,6 +301,10 @@ export default function Layout({ children }) {
         <header className="topbar">
           <div className="topbar-left">
             <button className="menu-btn" aria-label="Menu" onClick={() => setMenuOpen(true)}>☰</button>
+            <div className="topbar-brand">
+              <span className="tb-logo">{bizIcon}</span>
+              <b>NiteshPro</b>
+            </div>
             <div className="topbar-title">
               <b>{current?.label || 'Dashboard'}</b>
               <span>Welcome back, {user?.name}</span>
