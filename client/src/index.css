@@ -2281,5 +2281,77 @@ img, video, canvas { max-width: 100%; height: auto; }
   .pos-main { grid-template-columns: 40px 1fr 82px; height: 150px; }
 }
 
+/* ============================================================================
+   V6 — Dark mode for the shell + navbar polish
+   ============================================================================ */
+/* In dark mode the sidebar + navbar actually go dark (instead of staying the
+   brand colour). */
+[data-theme="dark"] .sidebar {
+  background: #0b1120 !important;
+  border-right: 1px solid var(--border) !important;
+}
+[data-theme="dark"] .topbar {
+  background: #0b1120 !important;
+  border-bottom: 1px solid var(--border) !important;
+  box-shadow: none !important;
+}
+[data-theme="dark"] .sidebar .brand { border-bottom-color: rgba(255, 255, 255, 0.08) !important; }
+
+/* Navbar search module — white background with dark text. */
+.topbar .cmd-input,
+[data-theme="dark"] .topbar .cmd-input {
+  background: #fff !important;
+  color: #0f172a !important;
+  border-color: rgba(255, 255, 255, 0.55) !important;
+}
+.topbar .cmd-input::placeholder { color: #94a3b8 !important; }
+.topbar .cmd-input:focus {
+  background: #fff !important;
+  border-color: #fff !important;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.4) !important;
+}
+.topbar .cmd-ico { color: #64748b !important; }
+
+/* Navbar title — bigger and white. */
+.topbar-title b { font-size: 19px !important; color: #fff !important; }
+.topbar-title span { font-size: 13px !important; color: rgba(255, 255, 255, 0.9) !important; }
+
+/* Mobile brand — NiteshPro + Point of Sale, larger. */
+.topbar-brand { gap: 10px; }
+.tb-brand-text { display: flex; flex-direction: column; line-height: 1.05; }
+.tb-brand-text b { font-size: 18px; color: #fff; font-weight: 800; letter-spacing: -0.2px; }
+.tb-brand-text span { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: rgba(255, 255, 255, 0.82); font-weight: 700; }
+
+/* Branch dropdown — clearer, scrollable, and never clipped on phones. */
+.branch-dropdown {
+  min-width: 260px;
+  max-height: 70vh;
+  overflow-y: auto;
+  border-radius: 12px;
+  box-shadow: 0 22px 50px rgba(0, 0, 0, 0.28);
+}
+.branch-option { padding: 12px 16px; font-size: 14px; }
+.branch-option + .branch-option { border-top: 1px solid var(--border); }
+.menu-pop-head { background: rgba(127, 127, 127, 0.06); }
+
+@media (max-width: 900px) {
+  /* On phones/tablets pin the branch list to the screen edges so every branch
+     is fully visible and easy to tap. */
+  .branch-dropdown {
+    position: fixed;
+    top: calc(var(--topbar-h) + 8px);
+    left: 12px;
+    right: 12px;
+    min-width: 0;
+    max-height: 62vh;
+  }
+}
+@media (max-width: 768px) {
+  .topbar-left { flex-wrap: wrap; }
+  /* Keep the page title ("Dashboard" + welcome) visible and readable on mobile. */
+  .topbar-title { display: flex !important; }
+  .topbar-title span { display: inline !important; }
+}
+
 
 

@@ -303,7 +303,10 @@ export default function Layout({ children }) {
             <button className="menu-btn" aria-label="Menu" onClick={() => setMenuOpen(true)}>☰</button>
             <div className="topbar-brand">
               <span className="tb-logo">{bizIcon}</span>
-              <b>NiteshPro</b>
+              <span className="tb-brand-text">
+                <b>NiteshPro</b>
+                <span>Point of Sale</span>
+              </span>
             </div>
             <div className="topbar-title">
               <b>{current?.label || 'Dashboard'}</b>
