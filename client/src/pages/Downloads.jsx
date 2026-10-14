@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Button, Card } from '../components/ui';
+import { Button } from '../components/ui';
 
 const DESKTOP_URL = import.meta.env.VITE_DESKTOP_URL || '';
 const APK_URL = import.meta.env.VITE_APK_URL || '';
@@ -27,71 +27,148 @@ export default function Downloads() {
   };
 
   return (
-    <div className="login-page">
-      <div className="downloads-wrap">
-        <h1>🛒 NiteshPro POS</h1>
-        <div className="sub" style={{ marginBottom: 20 }}>
-          Download the app — works fully offline, syncs automatically when online.
+    <div className="dl-page">
+      <div className="dl-bg" aria-hidden="true">
+        <span className="lg-grid" />
+        <span className="orb orb-1" />
+        <span className="orb orb-2" />
+        <span className="orb orb-3" />
+      </div>
+
+      <div className="dl-inner">
+        <header className="dl-head">
+          <div className="dl-brand">
+            <span className="brand-mark">🛒</span>
+            <div>
+              <div className="brand-name">NiteshPro <span>POS</span></div>
+              <div className="brand-auth">Authorized POS System</div>
+            </div>
+          </div>
+          <Link className="btn dl-back" to="/login">← Back to Sign In</Link>
+        </header>
+
+        <div className="dl-hero">
+          <h1>Get NiteshPro on every device</h1>
+          <p className="dl-sub">Install the app — works fully offline and syncs automatically when you're back online.</p>
+          <div className="dl-chips">
+            <span className="dl-chip">📴 Offline Ready</span>
+            <span className="dl-chip">☁️ Cloud Sync</span>
+            <span className="dl-chip">🔒 Encrypted</span>
+            <span className="dl-chip">⚡ Fast Billing</span>
+          </div>
         </div>
 
-        <div className="downloads-grid">
-          <Card>
-            <div className="download-icon">💻</div>
-            <h3>Desktop App (Windows)</h3>
+        <div className="dl-grid">
+          <section className="dl-card">
+            <div className="dl-card-head">
+              <span className="dl-os">💻</span>
+              <div>
+                <h3>Desktop App</h3>
+                <span className="dl-os-sub">Windows · macOS · Linux</span>
+              </div>
+              <span className="dl-badge">Recommended</span>
+            </div>
             <p className="muted small">
-              Installer for Windows PC. Works without internet — billing, products, purchases all offline, auto-sync later.
+              Full POS software for your counter — billing, products, purchases and reports, all working offline.
             </p>
-            <Button className="btn-block" onClick={downloadDesktop}>
+
+            <div className="pos-mock" aria-hidden="true">
+              <div className="pos-bar">
+                <span className="pos-dot r" />
+                <span className="pos-dot y" />
+                <span className="pos-dot g" />
+                <span className="pos-title">NiteshPro POS — Billing</span>
+              </div>
+              <div className="pos-main">
+                <div className="pos-nav">
+                  <span className="on">🧾</span>
+                  <span>📦</span>
+                  <span>📊</span>
+                  <span>⚙️</span>
+                </div>
+                <div className="pos-center">
+                  <span className="pos-search" />
+                  <div className="pos-tiles">
+                    {Array.from({ length: 8 }).map((_, i) => <span key={i} className="pos-tile" />)}
+                  </div>
+                </div>
+                <div className="pos-cart">
+                  <span className="pos-line" />
+                  <span className="pos-line" />
+                  <span className="pos-line s" />
+                  <span className="pos-total" />
+                </div>
+              </div>
+            </div>
+
+            <Button className="btn-block dl-btn" onClick={downloadDesktop}>
               ⬇️ Download Desktop App
             </Button>
             {desktopNotice && !DESKTOP_URL && (
-              <div className="muted small mt-8" style={{ color: 'var(--danger)' }}>
-                Installer link abhi configure nahi hua. Admin se poocho ya phir GitHub Release bana kar exe upload karo, aur Netlify mein <code>VITE_DESKTOP_URL</code> set karke redeploy karo.
+              <div className="muted small mt-8" style={{ color: '#fca5a5' }}>
+                Installer link abhi configure nahi hua. Admin se poocho, ya GitHub Release me exe upload karke
+                Netlify me <code>VITE_DESKTOP_URL</code> set karke redeploy karo.
               </div>
             )}
-          </Card>
+          </section>
 
-          <Card>
-            <div className="download-icon">📱</div>
-            <h3>Mobile App (Android / iPhone)</h3>
+          <section className="dl-card">
+            <div className="dl-card-head">
+              <span className="dl-os">📱</span>
+              <div>
+                <h3>Mobile App</h3>
+                <span className="dl-os-sub">Android · iPhone (PWA)</span>
+              </div>
+            </div>
             <p className="muted small">
-              Apne phone par app install karo — 2 tarike:
+              Apne phone par install karo — billing on the go, offline support ke saath.
             </p>
-            <Button className="btn-block" onClick={downloadApk}>
+
+            <div className="phone-mock" aria-hidden="true">
+              <span className="phone-notch" />
+              <div className="phone-screen">
+                <span className="phone-appicon">🛒</span>
+                <b className="phone-appname">NiteshPro</b>
+                <span className="phone-sub">POS</span>
+                <div className="phone-rows">
+                  <span />
+                  <span />
+                  <span />
+                </div>
+              </div>
+            </div>
+
+            <Button className="btn-block dl-btn" onClick={downloadApk}>
               ⬇️ Download APK (Android)
             </Button>
             {apkNotice && !APK_URL && (
-              <div className="muted small mt-8" style={{ color: 'var(--danger)' }}>
-                APK link abhi configure nahi hua. Admin se poocho ya phir Netlify mein <code>VITE_APK_URL</code> set karke redeploy karo.
+              <div className="muted small mt-8" style={{ color: '#fca5a5' }}>
+                APK link abhi configure nahi hua. Admin se poocho, ya Netlify me <code>VITE_APK_URL</code> set karke redeploy karo.
               </div>
             )}
             <Button
-              className="btn-block btn-outline mt-8"
+              variant="ghost"
+              className="btn-block dl-btn-ghost mt-8"
               onClick={() => window.open(APP_URL, '_blank')}
               disabled={!APP_URL}
             >
-              🌐 Open as PWA / Add to Home Screen
+              🌐 Add to Home Screen (PWA)
             </Button>
-            <p className="muted small mt-8">
-              <b>APK:</b> Android par direct install — download karo, "Install unknown apps" allow karo. <b>PWA:</b> browser mein kholo → menu mein <b>"Add to Home Screen"</b>. Dono offline chalte hain.
-            </p>
-          </Card>
+          </section>
         </div>
 
-        <Card className="mt-16">
-          <h4 style={{ marginBottom: 8 }}>📱 Install Mobile App — Steps</h4>
-          <ol className="small" style={{ paddingLeft: 20, lineHeight: 1.9 }}>
+        <section className="dl-steps">
+          <h4>📱 Install Mobile App — Steps</h4>
+          <ol>
             <li><b>Android (APK):</b> tap <b>"Download APK (Android)"</b> → APK download karo → open karo → "Install unknown apps" allow → Install.</li>
-            <li><b>Android (Chrome):</b> <b>"Open as PWA"</b> dabao → ⋮ menu → <b>"Add to Home screen"</b> ya <b>"Install app"</b>.</li>
-            <li><b>iPhone (Safari):</b> <b>"Open as PWA"</b> dabao → <b>Share</b> button → <b>"Add to Home Screen"</b>.</li>
+            <li><b>Android (Chrome):</b> <b>"Add to Home Screen"</b> dabao → ⋮ menu → <b>"Install app"</b> / <b>"Add to Home screen"</b>.</li>
+            <li><b>iPhone (Safari):</b> <b>"Add to Home Screen"</b> dabao → <b>Share</b> button → <b>"Add to Home Screen"</b>.</li>
             <li>The app appears as a normal app icon. <b>First time open it while online</b> (loads the app + your data).</li>
-            <li>After that it works <b>offline</b> — new sales/entries are saved on the phone and auto-sync when internet returns.</li>
+            <li>After that it works <b>offline</b> — new sales/entries save on the phone and auto-sync when internet returns.</li>
           </ol>
-        </Card>
+        </section>
 
-        <div style={{ textAlign: 'center', marginTop: 20 }}>
-          <Link className="btn btn-outline" to="/login">← Back to Sign In</Link>
-        </div>
+        <div className="dl-foot">NiteshPro POS · Authorized Retail Platform · © {new Date().getFullYear()}</div>
       </div>
     </div>
   );

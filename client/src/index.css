@@ -2180,5 +2180,106 @@ img, video, canvas { max-width: 100%; height: auto; }
   .topbar-title { display: none; }
 }
 
+/* ============================================================================
+   V5 — Professional POS mockups + redesigned Downloads page
+   ============================================================================ */
+
+/* Reusable miniature POS window (used on login hero + downloads). */
+.pos-mock {
+  margin: 16px 0; border-radius: 14px; overflow: hidden;
+  background: linear-gradient(180deg, #0e1526, #0b1120);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 22px 44px rgba(0, 0, 0, 0.45);
+}
+.pos-bar { display: flex; align-items: center; gap: 6px; padding: 8px 12px; background: rgba(255, 255, 255, 0.05); border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+.pos-dot { width: 9px; height: 9px; border-radius: 50%; }
+.pos-dot.r { background: #ef4444; } .pos-dot.y { background: #f59e0b; } .pos-dot.g { background: #22c55e; }
+.pos-title { margin-left: 8px; font-size: 11px; color: rgba(255, 255, 255, 0.6); font-weight: 600; }
+.pos-main { display: grid; grid-template-columns: 44px 1fr 96px; height: 170px; }
+.pos-nav { display: flex; flex-direction: column; gap: 6px; padding: 10px 0; align-items: center; background: rgba(255, 255, 255, 0.03); }
+.pos-nav span { width: 26px; height: 26px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 12px; background: rgba(255, 255, 255, 0.06); }
+.pos-nav span.on { background: var(--primary); color: #fff; box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.5); }
+.pos-center { padding: 10px; min-width: 0; }
+.pos-search { display: block; height: 22px; border-radius: 7px; background: rgba(255, 255, 255, 0.08); margin-bottom: 8px; }
+.pos-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.pos-tile { height: 34px; border-radius: 7px; background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.06); }
+.pos-cart { padding: 10px; border-left: 1px solid rgba(255, 255, 255, 0.08); display: flex; flex-direction: column; gap: 7px; background: rgba(255, 255, 255, 0.03); }
+.pos-line { display: block; height: 9px; border-radius: 5px; background: rgba(255, 255, 255, 0.1); }
+.pos-line.s { width: 60%; }
+.pos-total { margin-top: auto; height: 20px; border-radius: 6px; background: rgba(var(--primary-rgb), 0.5); }
+
+/* Miniature phone with the app icon. */
+.phone-mock {
+  position: relative; width: 152px; margin: 16px auto; padding: 8px;
+  border-radius: 26px; background: linear-gradient(160deg, #1b2440, #0b1120);
+  border: 1px solid rgba(255, 255, 255, 0.16); box-shadow: 0 22px 44px rgba(0, 0, 0, 0.5);
+}
+.phone-notch { position: absolute; top: 11px; left: 50%; transform: translateX(-50%); width: 52px; height: 6px; border-radius: 6px; background: rgba(255, 255, 255, 0.18); }
+.phone-screen {
+  border-radius: 19px; padding: 30px 14px 18px; display: flex; flex-direction: column; align-items: center; gap: 6px;
+  background: radial-gradient(120% 90% at 50% 0%, rgba(99, 102, 241, 0.38), rgba(11, 17, 32, 0.92));
+}
+.phone-appicon {
+  width: 58px; height: 58px; border-radius: 17px; display: flex; align-items: center; justify-content: center;
+  font-size: 29px; background: var(--primary); box-shadow: 0 12px 26px rgba(var(--primary-rgb), 0.5);
+}
+.phone-appname { color: #fff; font-size: 14px; }
+.phone-sub { color: rgba(255, 255, 255, 0.6); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; }
+.phone-rows { width: 100%; display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.phone-rows span { height: 8px; border-radius: 5px; background: rgba(255, 255, 255, 0.12); }
+.phone-rows span:nth-child(1) { width: 90%; }
+.phone-rows span:nth-child(2) { width: 70%; }
+.phone-rows span:nth-child(3) { width: 82%; }
+
+/* Downloads page */
+.dl-page { position: relative; min-height: 100vh; padding: 24px 16px 40px; overflow: hidden; background: linear-gradient(135deg, #0b1020 0%, #131a35 45%, #241a4d 100%); }
+.dl-bg { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 1; }
+.dl-inner { position: relative; z-index: 2; max-width: 1040px; margin: 0 auto; }
+.dl-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+.dl-brand { display: flex; align-items: center; gap: 12px; }
+.dl-brand .brand-name { font-size: 22px; }
+.dl-back { color: #fff; border: 1px solid rgba(255, 255, 255, 0.25); background: rgba(255, 255, 255, 0.08); font-weight: 600; }
+.dl-back:hover { background: rgba(255, 255, 255, 0.18); color: #fff; }
+.dl-hero { text-align: center; margin-bottom: 28px; }
+.dl-hero h1 { color: #fff; font-size: 30px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 8px; }
+.dl-sub { color: #b9c4dd; font-size: 15px; margin: 0 auto; max-width: 560px; }
+.dl-chips { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 16px; }
+.dl-chip { font-size: 12px; font-weight: 600; color: #cdd7ee; background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.12); padding: 6px 12px; border-radius: 999px; }
+.dl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: stretch; }
+.dl-card {
+  position: relative; display: flex; flex-direction: column; padding: 22px; border-radius: 20px; color: #e5e7eb;
+  background: rgba(17, 24, 39, 0.6); border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+}
+.dl-card-head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.dl-os { width: 46px; height: 46px; flex: 0 0 46px; border-radius: 13px; display: flex; align-items: center; justify-content: center; font-size: 23px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.12); }
+.dl-card-head h3 { color: #fff; font-size: 18px; margin: 0; }
+.dl-os-sub { font-size: 11.5px; color: #9fb0d0; }
+.dl-badge { margin-left: auto; font-size: 10px; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; color: #0b1020; background: linear-gradient(135deg, #67e8f9, #a78bfa); padding: 5px 10px; border-radius: 999px; white-space: nowrap; }
+.dl-card .muted.small { color: #b9c4dd; }
+.dl-card .btn-block { margin-top: 14px; }
+.dl-card .dl-btn { margin-top: auto; }
+.dl-btn { background: linear-gradient(135deg, #4f46e5, #6366f1 45%, #22d3ee); border: none; font-weight: 700; box-shadow: 0 10px 24px rgba(79, 70, 229, 0.42); }
+.dl-btn:hover:not(:disabled) { filter: brightness(1.06); transform: translateY(-1px); }
+.dl-btn-ghost { background: rgba(255, 255, 255, 0.08) !important; border: 1px solid rgba(255, 255, 255, 0.2) !important; color: #fff !important; }
+.dl-steps { margin-top: 22px; padding: 22px; border-radius: 20px; color: #e5e7eb; background: rgba(17, 24, 39, 0.6); border: 1px solid rgba(255, 255, 255, 0.12); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.dl-steps h4 { color: #fff; margin-bottom: 10px; }
+.dl-steps ol { padding-left: 20px; line-height: 1.95; color: #cdd7ee; font-size: 13.5px; }
+.dl-foot { text-align: center; margin-top: 24px; color: #8ea0c2; font-size: 12px; letter-spacing: 0.3px; }
+.dl-page code { background: rgba(255, 255, 255, 0.1); padding: 1px 6px; border-radius: 6px; font-size: 12px; }
+
+/* POS preview inside the login hero */
+.login-mock { margin-bottom: 22px; }
+.login-hero-body .login-features { margin-top: 22px; }
+
+@media (max-width: 760px) {
+  .dl-grid { grid-template-columns: 1fr; }
+  .dl-hero h1 { font-size: 23px; }
+  .dl-sub { font-size: 14px; }
+  .dl-card { padding: 18px; }
+  .pos-main { grid-template-columns: 40px 1fr 82px; height: 150px; }
+}
+
 
 

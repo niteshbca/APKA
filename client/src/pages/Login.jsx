@@ -112,6 +112,36 @@ export default function Login() {
               Billing, inventory, accounting and staff — an international-grade
               point-of-sale built for retail that never stops.
             </p>
+
+            <div className="pos-mock login-mock" aria-hidden="true">
+              <div className="pos-bar">
+                <span className="pos-dot r" />
+                <span className="pos-dot y" />
+                <span className="pos-dot g" />
+                <span className="pos-title">NiteshPro POS — Billing</span>
+              </div>
+              <div className="pos-main">
+                <div className="pos-nav">
+                  <span className="on">🧾</span>
+                  <span>📦</span>
+                  <span>📊</span>
+                  <span>⚙️</span>
+                </div>
+                <div className="pos-center">
+                  <span className="pos-search" />
+                  <div className="pos-tiles">
+                    {Array.from({ length: 8 }).map((_, i) => <span key={i} className="pos-tile" />)}
+                  </div>
+                </div>
+                <div className="pos-cart">
+                  <span className="pos-line" />
+                  <span className="pos-line" />
+                  <span className="pos-line s" />
+                  <span className="pos-total" />
+                </div>
+              </div>
+            </div>
+
             <div className="login-mode-badges">
               <span className="mode-badge online">🌐 Online — Cloud Sync</span>
               <span className="mode-badge office">🏢 Office / Offline Mode</span>
