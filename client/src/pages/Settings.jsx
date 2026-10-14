@@ -5,6 +5,7 @@ import { useToast } from '../context/ToastContext';
 import { Button, Card, Field } from '../components/ui';
 import { ACCENTS, applyAccent, savedAccent, DEFAULT_ACCENT } from '../utils/theme';
 import { generateGuidePdf } from '../utils/guidePdf';
+import { BUSINESS_TYPES, getBusinessType } from '../utils/businessTypes';
 
 export default function Settings() {
   const [form, setForm] = useState({});
@@ -25,6 +26,7 @@ export default function Settings() {
         currency: s.currency,
         invoicePrefix: s.invoicePrefix,
         accentColor: s.accentColor || DEFAULT_ACCENT,
+        businessType: s.businessType || 'general',
       };
       setForm(clean);
       if (s.accentColor) { applyAccent(s.accentColor); setAccent(s.accentColor); }
@@ -57,6 +59,29 @@ export default function Settings() {
       toast('User guide PDF downloaded', 'success');
     } catch (e) {
       toast(e.message || 'Could not create PDF', 'error');
+    }
+  };
+
+  const activeType = getBusinessType(form.businessType || 'general');
+
+  const chooseType = (key) => {
+    setForm((f) => ({ ...f, businessType: key }));
+    api.put('/settings', { businessType: key }).catch(() => {});
+  };
+
+  const applySuggestedCategories = async () => {
+    const bt = getBusinessType(form.businessType || 'general');
+    try {
+      const existing = await api.get('/categories');
+      const have = new Set((existing.data.data || []).map((c) => String(c.name).toLowerCase()));
+      let added = 0;
+      for (const name of bt.categories) {
+        if (have.has(name.toLowerCase())) continue;
+        try { await api.post('/categories', { name }); added += 1; } catch (e) { /* skip duplicates */ }
+      }
+      toast(added ? `${added} categories added` : 'Categories already exist', 'success');
+    } catch (e) {
+      toast(e.message, 'error');
     }
   };
 
@@ -101,6 +126,30 @@ export default function Settings() {
           <Field label="&nbsp;">
             <Button variant="ghost" onClick={() => pickAccent(DEFAULT_ACCENT)}>Reset to default</Button>
           </Field>
+        </div>
+      </Card>
+
+      <Card title="Business Type" className="mt-16">
+        <div className="muted small mb-16">
+          Apne business ka type chunein (Kirana, Clothing, Restaurant, Electronics, Medical…).
+          Ek click me ready-made product categories bhi add kar sakte hain.
+        </div>
+        <div className="biz-grid mb-16">
+          {BUSINESS_TYPES.map((b) => (
+            <button
+              key={b.key}
+              type="button"
+              className={`biz-tile ${(form.businessType || 'general') === b.key ? 'active' : ''}`}
+              onClick={() => chooseType(b.key)}
+            >
+              <span className="biz-ico">{b.icon}</span>
+              <span className="biz-label">{b.label}</span>
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-8" style={{ flexWrap: 'wrap', alignItems: 'center' }}>
+          <Button variant="ghost" onClick={applySuggestedCategories}>+ Add suggested categories</Button>
+          <span className="muted small">{activeType.icon} {activeType.tagline}</span>
         </div>
       </Card>
 

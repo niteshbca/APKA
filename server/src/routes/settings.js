@@ -18,7 +18,7 @@ router.get('/', async (req, res, next) => {
 
 router.put('/', requireRoles('superadmin', 'admin'), async (req, res, next) => {
   try {
-    const allowed = ['businessName', 'address', 'phone', 'gstin', 'logoUrl', 'footerNote', 'thermalWidth', 'currency', 'invoicePrefix', 'accentColor'];
+    const allowed = ['businessName', 'address', 'phone', 'gstin', 'logoUrl', 'footerNote', 'thermalWidth', 'currency', 'invoicePrefix', 'accentColor', 'businessType'];
     const update = {};
     for (const k of allowed) {
       if (req.body[k] !== undefined) update[k] = req.body[k];

@@ -22,6 +22,8 @@ const settingsSchema = new mongoose.Schema(
     labelDefaults: { type: mongoose.Schema.Types.Mixed, default: {} },
     // Brand accent colour (hex) used across the whole UI.
     accentColor: { type: String, default: '#4f46e5' },
+    // Business type preset (kirana, clothing, restaurant, electronics, medical…).
+    businessType: { type: String, default: 'general' },
     // Automatic backup configuration (per company). Managed by backupScheduler.
     autoBackup: {
       type: mongoose.Schema.Types.Mixed,

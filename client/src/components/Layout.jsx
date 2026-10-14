@@ -15,6 +15,7 @@ const NAV = [
   // Sales
   { to: '/billing', label: 'Sales & Billing', icon: '🧾', perm: 'sales.create', module: 'sales', group: 'Sales' },
   { to: '/invoices', label: 'Invoices', icon: '📄', perm: 'sales.view', module: 'invoices', group: 'Sales' },
+  { to: '/returns', label: 'Returns & Udhaar', icon: '↩️', perm: 'returns.view', module: 'returns', group: 'Sales' },
   { to: '/customers', label: 'CRM — Customers', icon: '👥', perm: 'customers.view', module: 'crm', group: 'Sales' },
   { to: '/labels', label: 'Label Printing', icon: '🏷️', perm: 'labels.view', module: 'labels', group: 'Sales' },
 
@@ -268,19 +269,6 @@ export default function Layout({ children }) {
         <div className={`sync-pill ${syncState.cls}`} title="Click to sync now" onClick={sync.triggerSync}>
           <span className="sync-dot" />
           <span className="sync-text">{syncState.label}</span>
-        </div>
-
-        <div className="sidebar-footer">
-          <div className="sidebar-user">
-            <span className="user-avatar-sm">{initials}</span>
-            <span className="user-meta">
-              <b>{user?.name}</b>
-              <span>{user?.role}</span>
-            </span>
-          </div>
-          <button className="btn btn-sm sidebar-logout" onClick={handleLogout}>
-            ⎋ <span>Logout</span>
-          </button>
         </div>
       </aside>
 

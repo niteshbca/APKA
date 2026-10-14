@@ -1951,7 +1951,7 @@ body {
    ============================================================================ */
 [data-theme="dark"] .sidebar {
   background: linear-gradient(180deg, #0a101f 0%, #0d1527 55%, #0a101d 100%);
-  border-right: 1px solid var(--border);
+  border-right: none;
 }
 [data-theme="dark"] .sidebar .brand { border-bottom-color: rgba(255, 255, 255, 0.08); }
 [data-theme="dark"] .brand-mark-sm { background: var(--grad-primary) !important; box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4); color: #fff; }
@@ -2057,6 +2057,16 @@ img, video, canvas { max-width: 100%; height: auto; }
   .page-content { padding: 16px 12px 28px; }
   .card-content table.table { min-width: 520px; }
   .page-head { flex-direction: column; align-items: stretch; }
+  /* CRITICAL: the V2 rule `.main-area { margin-left: var(--sidebar-w) }` appears
+     later than the old mobile reset, so it silently re-applied the 276px
+     offset on phones. Re-reset it here (this block is last) so the sidebar
+     truly becomes an overlay off-canvas and the page fits the screen. */
+  .main-area,
+  .app-shell.sidebar-collapsed .main-area { margin-left: 0 !important; }
+  .sidebar { max-width: 86vw; }
+  .sidebar.open { box-shadow: none; }
+  .dash-hero-inner { gap: 12px; }
+  .bar-value { display: none; }
 }
 
 @media (max-width: 640px) {
@@ -2069,6 +2079,28 @@ img, video, canvas { max-width: 100%; height: auto; }
   .page-content { padding: 14px 10px 24px; }
   .downloads-grid, .grid-2 { grid-template-columns: 1fr; }
 }
+
+/* Remove the drop shadows under the sidebar and navbar — flat brand colour. */
+.topbar, .pos-topbar { box-shadow: none !important; }
+.sidebar.open { box-shadow: none !important; }
+
+/* Bigger, easier-to-read sidebar module text. */
+.sidebar a { font-size: 15px; }
+.sidebar a .nav-ico { font-size: 17px; }
+.sidebar .nav-group-title { font-size: 11px; }
+
+/* Business-type preset tiles (Settings). */
+.biz-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.biz-tile {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
+  padding: 12px 14px; border-radius: 12px; cursor: pointer; text-align: left;
+  border: 1px solid var(--border); background: var(--card); color: var(--text);
+  transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+.biz-tile:hover { border-color: var(--primary); transform: translateY(-1px); }
+.biz-tile.active { border-color: var(--primary); background: var(--primary-light); box-shadow: inset 0 0 0 1px var(--primary); }
+.biz-ico { font-size: 22px; line-height: 1; }
+.biz-label { font-weight: 700; font-size: 13px; }
 
 
 

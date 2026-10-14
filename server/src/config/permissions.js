@@ -63,6 +63,10 @@ const PERMISSIONS = [
   { key: 'invoices.view', label: 'View invoices', module: 'invoices' },
   { key: 'invoices.export', label: 'Export invoices', module: 'invoices' },
 
+  // Returns & Udhaar (credit ledger)
+  { key: 'returns.view', label: 'View returns & udhaar', module: 'returns' },
+  { key: 'returns.manage', label: 'Manage returns & udhaar', module: 'returns' },
+
   // Labels
   { key: 'labels.view', label: 'View labels', module: 'labels' },
   { key: 'labels.print', label: 'Print labels', module: 'labels' },
@@ -152,6 +156,7 @@ const ROLE_TEMPLATES = {
     'purchases.view', 'purchases.create', 'purchases.edit',
     'inventory.view', 'inventory.adjust', 'inventory.transfer', 'inventory.count',
     'invoices.view', 'invoices.export',
+    'returns.view', 'returns.manage',
     'labels.view', 'labels.print', 'labels.template', 'labels.reprint', 'labels.prices',
     'reports.view', 'reports.export',
     'users.view', 'branches.view', 'settings.view', 'marketing.view',
@@ -167,6 +172,7 @@ const ROLE_TEMPLATES = {
     'products.view', 'categories.view',
     'customers.view', 'customers.create',
     'invoices.view',
+    'returns.view',
     'labels.view', 'labels.print',
     'tasks.view',
     'ai.view', 'ai.use',

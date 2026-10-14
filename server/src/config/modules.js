@@ -17,6 +17,7 @@ const MODULES = [
   { key: 'purchases', label: 'Purchases', icon: '📥', group: 'Supply', default: true },
   { key: 'inventory', label: 'Inventory', icon: '🏬', group: 'Supply', default: true },
   { key: 'invoices', label: 'Invoices', icon: '📄', group: 'Revenue', default: true },
+  { key: 'returns', label: 'Returns & Udhaar', icon: '↩️', group: 'Revenue', default: true },
   { key: 'labels', label: 'Label Printing', icon: '🏷️', group: 'Revenue', default: true },
   { key: 'accounts', label: 'Accounts', icon: '💰', group: 'Finance', default: true },
   { key: 'hr', label: 'HR & Staff', icon: '👷', group: 'People', default: true },

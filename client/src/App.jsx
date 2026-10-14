@@ -21,6 +21,7 @@ import Customers from './pages/Customers';
 import Purchases from './pages/Purchases';
 import Inventory from './pages/Inventory';
 import Invoices from './pages/Invoices';
+import Returns from './pages/Returns';
 import Reports from './pages/Reports';
 import Users from './pages/Users';
 import Branches from './pages/Branches';
@@ -112,6 +113,7 @@ function AppRoutes() {
                   <Route path="/purchases" element={<PermRoute perm="purchases.view"><Purchases /></PermRoute>} />
                   <Route path="/inventory" element={<PermRoute perm="inventory.view"><Inventory /></PermRoute>} />
                   <Route path="/invoices" element={<PermRoute perm="sales.view"><Invoices /></PermRoute>} />
+                  <Route path="/returns" element={<ModuleRoute module="returns"><PermRoute perm="returns.view"><Returns /></PermRoute></ModuleRoute>} />
                   <Route path="/labels" element={<ModuleRoute module="labels"><PermRoute perm="labels.view"><LabelPrinting /></PermRoute></ModuleRoute>} />
                   <Route path="/reports" element={<PermRoute perm="reports.view"><Reports /></PermRoute>} />
                   <Route path="/branches" element={<PermRoute perm="branches.view"><Branches /></PermRoute>} />
