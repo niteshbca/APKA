@@ -7,6 +7,30 @@ import { ACCENTS, applyAccent, savedAccent, DEFAULT_ACCENT } from '../utils/them
 import { generateGuidePdf } from '../utils/guidePdf';
 import { BUSINESS_TYPES, getBusinessType } from '../utils/businessTypes';
 
+// Every keyboard shortcut the software supports (kept in sync with the code).
+const SHORTCUTS = [
+  {
+    group: 'Billing (Sales & Billing screen)',
+    keys: [
+      { key: 'F2', desc: 'Product search par focus' },
+      { key: 'F4', desc: 'Naya bill (New Bill)' },
+      { key: 'F7', desc: 'Hold bill — side me rakhein' },
+      { key: 'F8', desc: 'Park bill' },
+      { key: 'F9', desc: 'Pay & Print (payment window)' },
+      { key: 'F11', desc: 'Fullscreen on / off' },
+      { key: 'Esc', desc: 'Fullscreen se bahar' },
+    ],
+  },
+  {
+    group: 'Search & Scanner',
+    keys: [
+      { key: 'Enter', desc: 'Search ka highlighted result kholein' },
+      { key: 'Esc', desc: 'Search / dropdown band karein' },
+      { key: 'Barcode', desc: 'Barcode scan ya type karke Enter dabayein' },
+    ],
+  },
+];
+
 export default function Settings() {
   const [form, setForm] = useState({});
   const [accent, setAccent] = useState(savedAccent());
@@ -101,6 +125,30 @@ export default function Settings() {
           ko training dene ke liye perfect.
         </div>
         <Button onClick={downloadGuide}>⬇️ Download User Guide (PDF)</Button>
+      </Card>
+
+      <Card title="Keyboard Shortcuts" className="mt-16">
+        <div className="muted small mb-16">
+          Software ke shortcut keys — billing counter par speed badhane ke liye.
+          Billing wale keys sirf “Sales &amp; Billing” screen par kaam karte hain.
+        </div>
+        <div className="sc-grid">
+          {SHORTCUTS.map((g) => (
+            <div className="sc-group" key={g.group}>
+              <div className="sc-group-title">{g.group}</div>
+              {g.keys.map((s) => (
+                <div className="sc-row" key={`${g.group}-${s.key}-${s.desc}`}>
+                  <span className="sc-keys">
+                    {s.key === 'Barcode'
+                      ? <kbd className="kbd">Scan</kbd>
+                      : s.key.split(' + ').map((k) => <kbd key={k} className="kbd">{k}</kbd>)}
+                  </span>
+                  <span className="sc-desc">{s.desc}</span>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
       </Card>
 
       <Card title="Appearance" className="mt-16">
