@@ -1,7 +1,5 @@
 import React from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import api from './api/axios';
-import { applyAccent } from './utils/theme';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { BranchProvider } from './context/BranchContext';
 import { SyncProvider } from './context/SyncContext';
@@ -71,14 +69,6 @@ function ModuleRoute({ module, children }) {
  * can reuse them without the sidebar Layout chrome.
  */
 function AppProviders({ children }) {
-  // Keep the brand accent in sync with the business settings on every screen
-  // (the fullscreen Billing screen has no sidebar Layout, so it needs this too).
-  React.useEffect(() => {
-    api.get('/settings')
-      .then((r) => { const c = r.data?.data?.accentColor; if (c) applyAccent(c); })
-      .catch(() => {});
-  }, []);
-
   return (
     <Protected>
       <LicenseGate>

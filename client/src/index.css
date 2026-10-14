@@ -2335,16 +2335,28 @@ img, video, canvas { max-width: 100%; height: auto; }
 .menu-pop-head { background: rgba(127, 127, 127, 0.06); }
 
 @media (max-width: 900px) {
-  /* On phones/tablets pin the branch list to the screen edges so every branch
-     is fully visible and easy to tap. */
-  .branch-dropdown {
+  /* On phones/tablets any topbar popover (branch list, FY list, user menu)
+     becomes a bottom sheet pinned to the screen so nothing is clipped and every
+     row is easy to tap. */
+  .branch-dropdown,
+  .menu-pop {
     position: fixed;
-    top: calc(var(--topbar-h) + 8px);
     left: 12px;
     right: 12px;
+    top: auto;
+    bottom: 12px;
     min-width: 0;
-    max-height: 62vh;
+    max-width: none;
+    max-height: 72vh;
+    overflow-y: auto;
+    border-radius: 16px;
+    z-index: 80;
+    animation: sheet-up 0.16s ease-out;
   }
+}
+@keyframes sheet-up {
+  from { transform: translateY(14px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 @media (max-width: 768px) {
   .topbar-left { flex-wrap: wrap; }

@@ -25,11 +25,10 @@ export default function Settings() {
         thermalWidth: s.thermalWidth,
         currency: s.currency,
         invoicePrefix: s.invoicePrefix,
-        accentColor: s.accentColor || DEFAULT_ACCENT,
+        accentColor: savedAccent(),
         businessType: s.businessType || 'general',
       };
       setForm(clean);
-      if (s.accentColor) { applyAccent(s.accentColor); setAccent(s.accentColor); }
       try { localStorage.setItem('pos_business_type', clean.businessType); } catch { /* ignore */ }
       db.put('settings', { key: 'business_settings', ...clean });
     }).catch((e) => toast(e.message, 'error'));
@@ -37,7 +36,9 @@ export default function Settings() {
 
   const save = async () => {
     try {
-      const res = await api.put('/settings', form);
+      const payload = { ...form };
+      delete payload.accentColor;
+      const res = await api.put('/settings', payload);
       await db.put('settings', { key: 'business_settings', ...res.data.data });
       toast('Settings saved', 'success');
     } catch (e) {
@@ -51,7 +52,6 @@ export default function Settings() {
     const applied = applyAccent(hex);
     setAccent(applied);
     setForm((f) => ({ ...f, accentColor: applied }));
-    api.put('/settings', { accentColor: applied }).catch(() => {});
   };
 
   const downloadGuide = () => {
