@@ -66,28 +66,42 @@ router.delete('/entries/:id', manage, async (req, res, next) => {
 
 router.get('/summary', report, async (req, res, next) => {
   try {
-    const month = req.query.month || new Date().toISOString().slice(0, 7);
-    const start = new Date(`${month}-01T00:00:00.000Z`);
-    const end = new Date(start);
-    end.setMonth(end.getMonth() + 1);
+    const { from, to } = req.query;
+    let start;
+    let end;
+    let label;
+    if (from && to) {
+      start = new Date(`${from}T00:00:00.000Z`);
+      end = new Date(`${to}T23:59:59.999Z`);
+      label = `${from} → ${to}`;
+    } else {
+      const month = req.query.month || new Date().toISOString().slice(0, 7);
+      start = new Date(`${month}-01T00:00:00.000Z`);
+      end = new Date(start);
+      end.setMonth(end.getMonth() + 1);
+      end = new Date(end.getTime() - 1);
+      label = month;
+    }
 
-    const [monthRows, allIncome, allExpense] = await Promise.all([
-      LedgerEntry.find({ date: { $gte: start, $lt: end } }),
-      LedgerEntry.aggregate([{ $match: { type: 'income' } }, { $group: { _id: null, total: { $sum: '$amount' } } }]),
-      LedgerEntry.aggregate([{ $match: { type: 'expense' } }, { $group: { _id: null, total: { $sum: '$amount' } } }]),
+    const [rows, allIncome, allExpense] = await Promise.all([
+      LedgerEntry.find(LedgerEntry.tenantFilter({ date: { $gte: start, $lte: end } })),
+      LedgerEntry.aggregate([{ $match: LedgerEntry.tenantFilter({ type: 'income' }) }, { $group: { _id: null, total: { $sum: '$amount' } } }]),
+      LedgerEntry.aggregate([{ $match: LedgerEntry.tenantFilter({ type: 'expense' }) }, { $group: { _id: null, total: { $sum: '$amount' } } }]),
     ]);
 
-    const income = monthRows.filter((r) => r.type === 'income').reduce((s, r) => s + r.amount, 0);
-    const expense = monthRows.filter((r) => r.type === 'expense').reduce((s, r) => s + r.amount, 0);
+    const income = rows.filter((r) => r.type === 'income').reduce((s, r) => s + r.amount, 0);
+    const expense = rows.filter((r) => r.type === 'expense').reduce((s, r) => s + r.amount, 0);
     const byCategory = {};
-    for (const r of monthRows) {
+    for (const r of rows) {
       const key = `${r.type}:${r.category || 'Uncategorised'}`;
       byCategory[key] = (byCategory[key] || 0) + r.amount;
     }
     res.json({
       success: true,
       data: {
-        month,
+        month: label,
+        from: from || undefined,
+        to: to || undefined,
         income,
         expense,
         net: income - expense,

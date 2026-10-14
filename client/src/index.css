@@ -2353,5 +2353,40 @@ img, video, canvas { max-width: 100%; height: auto; }
   .topbar-title span { display: inline !important; }
 }
 
+/* ============================================================================
+   V7 — Financial year selector in the topbar
+   ============================================================================ */
+.topbar .fy-btn {
+  height: 40px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 11px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.16) !important;
+  color: #fff !important;
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+  transition: 0.15s;
+}
+.topbar .fy-btn:hover { background: rgba(255, 255, 255, 0.3) !important; transform: translateY(-1px); }
+[data-theme="dark"] .topbar .fy-btn {
+  background: var(--card) !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}
+[data-theme="dark"] .topbar .fy-btn:hover {
+  background: var(--primary-light) !important;
+  color: var(--primary) !important;
+  border-color: transparent !important;
+}
+@media (max-width: 560px) {
+  .topbar .fy-btn { padding: 0 10px; font-size: 15px; }
+  .topbar .fy-btn-label { display: none; }
+}
+
 
 

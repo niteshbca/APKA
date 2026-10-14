@@ -7,6 +7,7 @@ import { useModules } from '../context/ModulesContext';
 import NotificationBell from './NotificationBell';
 import api from '../api/axios';
 import { getBusinessType } from '../utils/businessTypes';
+import { getActiveFY, fyOptions, setActiveFY } from '../utils/financialYear';
 
 // Ordered sidebar sections — gives the app a professional, scannable layout.
 const GROUP_ORDER = ['Overview', 'Sales', 'Inventory', 'Finance', 'People', 'Operations', 'Marketing', 'Intelligence', 'Administration'];
@@ -91,6 +92,8 @@ export default function Layout({ children }) {
   const [bizType, setBizType] = useState(() => {
     try { return localStorage.getItem('pos_business_type') || 'general'; } catch { return 'general'; }
   });
+  const [fy, setFy] = useState(() => getActiveFY());
+  const [fyMenu, setFyMenu] = useState(false);
   const searchRef = useRef(null);
 
   const bizIcon = getBusinessType(bizType).icon;
@@ -158,6 +161,17 @@ export default function Layout({ children }) {
     };
   }, []);
 
+  // Keep the topbar FY selector in sync with the current selection.
+  useEffect(() => {
+    const onFy = () => setFy(getActiveFY());
+    window.addEventListener('pos:financial-year', onFy);
+    window.addEventListener('storage', onFy);
+    return () => {
+      window.removeEventListener('pos:financial-year', onFy);
+      window.removeEventListener('storage', onFy);
+    };
+  }, []);
+
   // Live clock — current date & time in the top bar.
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
@@ -168,12 +182,19 @@ export default function Layout({ children }) {
   useEffect(() => {
     setBranchMenu(false);
     setUserMenu(false);
+    setFyMenu(false);
     setSearchOpen(false);
     setQ('');
     setSideOpen(false);
     setSideQuery('');
     setMenuOpen(false);
   }, [location.pathname]);
+
+  const chooseFy = (key) => {
+    setActiveFY(key);
+    setFy(getActiveFY());
+    setFyMenu(false);
+  };
 
   const toggleFullscreen = async () => {
     try {
@@ -348,6 +369,34 @@ export default function Layout({ children }) {
           </div>
 
           <div className="flex gap-8" style={{ alignItems: 'center' }}>
+            <div style={{ position: 'relative' }}>
+              <button
+                className="fy-btn"
+                onClick={() => { setFyMenu((s) => !s); setBranchMenu(false); setUserMenu(false); }}
+                title="Financial year (April – March)"
+              >
+                📅 <span className="fy-btn-label">FY {fy.key}</span>
+              </button>
+              {fyMenu && (
+                <>
+                  <div className="pop-backdrop" onClick={() => setFyMenu(false)} />
+                  <div className="branch-dropdown">
+                    <div className="menu-pop-head muted small">Financial Year · Apr – Mar</div>
+                    {fyOptions().map((f, i) => (
+                      <button
+                        key={f.key}
+                        className={`branch-option ${fy.key === f.key ? 'active' : ''}`}
+                        onClick={() => chooseFy(f.key)}
+                      >
+                        <span>FY {f.key}</span>
+                        {i === 0 && <span className="badge badge-info">Current</span>}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+
             <div className="topbar-clock hide-md" title={now.toString()}>
               <span className="tc-date">{now.toLocaleDateString(undefined, { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })}</span>
               <span className="tc-time">{now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
