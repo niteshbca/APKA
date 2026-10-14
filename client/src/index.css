@@ -2185,28 +2185,28 @@ img, video, canvas { max-width: 100%; height: auto; }
    ============================================================================ */
 
 /* Reusable miniature POS window (used on login hero + downloads). */
-.pos-mock {
+.mk-pos {
   margin: 16px 0; border-radius: 14px; overflow: hidden;
   background: linear-gradient(180deg, #0e1526, #0b1120);
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: 0 22px 44px rgba(0, 0, 0, 0.45);
 }
-.pos-bar { display: flex; align-items: center; gap: 6px; padding: 8px 12px; background: rgba(255, 255, 255, 0.05); border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
-.pos-dot { width: 9px; height: 9px; border-radius: 50%; }
-.pos-dot.r { background: #ef4444; } .pos-dot.y { background: #f59e0b; } .pos-dot.g { background: #22c55e; }
-.pos-title { margin-left: 8px; font-size: 11px; color: rgba(255, 255, 255, 0.6); font-weight: 600; }
-.pos-main { display: grid; grid-template-columns: 44px 1fr 96px; height: 170px; }
-.pos-nav { display: flex; flex-direction: column; gap: 6px; padding: 10px 0; align-items: center; background: rgba(255, 255, 255, 0.03); }
-.pos-nav span { width: 26px; height: 26px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 12px; background: rgba(255, 255, 255, 0.06); }
-.pos-nav span.on { background: var(--primary); color: #fff; box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.5); }
-.pos-center { padding: 10px; min-width: 0; }
-.pos-search { display: block; height: 22px; border-radius: 7px; background: rgba(255, 255, 255, 0.08); margin-bottom: 8px; }
-.pos-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-.pos-tile { height: 34px; border-radius: 7px; background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.06); }
-.pos-cart { padding: 10px; border-left: 1px solid rgba(255, 255, 255, 0.08); display: flex; flex-direction: column; gap: 7px; background: rgba(255, 255, 255, 0.03); }
-.pos-line { display: block; height: 9px; border-radius: 5px; background: rgba(255, 255, 255, 0.1); }
-.pos-line.s { width: 60%; }
-.pos-total { margin-top: auto; height: 20px; border-radius: 6px; background: rgba(var(--primary-rgb), 0.5); }
+.mk-pos .mk-bar { display: flex; align-items: center; gap: 6px; padding: 8px 12px; background: rgba(255, 255, 255, 0.05); border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+.mk-pos .mk-dot { width: 9px; height: 9px; border-radius: 50%; }
+.mk-pos .mk-dot.r { background: #ef4444; } .mk-pos .mk-dot.y { background: #f59e0b; } .mk-pos .mk-dot.g { background: #22c55e; }
+.mk-pos .mk-title { margin-left: 8px; font-size: 11px; color: rgba(255, 255, 255, 0.6); font-weight: 600; }
+.mk-pos .mk-main { display: grid; grid-template-columns: 44px 1fr 96px; height: 170px; }
+.mk-pos .mk-nav { display: flex; flex-direction: column; gap: 6px; padding: 10px 0; align-items: center; background: rgba(255, 255, 255, 0.03); }
+.mk-pos .mk-nav span { width: 26px; height: 26px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 12px; background: rgba(255, 255, 255, 0.06); }
+.mk-pos .mk-nav span.on { background: var(--primary); color: #fff; box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.5); }
+.mk-pos .mk-center { padding: 10px; min-width: 0; }
+.mk-pos .mk-search { display: block; height: 22px; border-radius: 7px; background: rgba(255, 255, 255, 0.08); margin-bottom: 8px; }
+.mk-pos .mk-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.mk-pos .mk-tile { height: 34px; border-radius: 7px; background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.06); }
+.mk-pos .mk-cart { padding: 10px; border-left: 1px solid rgba(255, 255, 255, 0.08); display: flex; flex-direction: column; gap: 7px; background: rgba(255, 255, 255, 0.03); }
+.mk-pos .mk-line { display: block; height: 9px; border-radius: 5px; background: rgba(255, 255, 255, 0.1); }
+.mk-pos .mk-line.s { width: 60%; }
+.mk-pos .mk-total { margin-top: auto; height: 20px; border-radius: 6px; background: rgba(var(--primary-rgb), 0.5); }
 
 /* Miniature phone with the app icon. */
 .phone-mock {
@@ -2278,7 +2278,7 @@ img, video, canvas { max-width: 100%; height: auto; }
   .dl-hero h1 { font-size: 23px; }
   .dl-sub { font-size: 14px; }
   .dl-card { padding: 18px; }
-  .pos-main { grid-template-columns: 40px 1fr 82px; height: 150px; }
+  .mk-pos .mk-main { grid-template-columns: 40px 1fr 82px; height: 150px; }
 }
 
 /* ============================================================================

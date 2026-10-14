@@ -72,31 +72,31 @@ export default function Downloads() {
               Full POS software for your counter — billing, products, purchases and reports, all working offline.
             </p>
 
-            <div className="pos-mock" aria-hidden="true">
-              <div className="pos-bar">
-                <span className="pos-dot r" />
-                <span className="pos-dot y" />
-                <span className="pos-dot g" />
-                <span className="pos-title">NiteshPro POS — Billing</span>
+            <div className="mk-pos" aria-hidden="true">
+              <div className="mk-bar">
+                <span className="mk-dot r" />
+                <span className="mk-dot y" />
+                <span className="mk-dot g" />
+                <span className="mk-title">NiteshPro POS — Billing</span>
               </div>
-              <div className="pos-main">
-                <div className="pos-nav">
+              <div className="mk-main">
+                <div className="mk-nav">
                   <span className="on">🧾</span>
                   <span>📦</span>
                   <span>📊</span>
                   <span>⚙️</span>
                 </div>
-                <div className="pos-center">
-                  <span className="pos-search" />
-                  <div className="pos-tiles">
-                    {Array.from({ length: 8 }).map((_, i) => <span key={i} className="pos-tile" />)}
+                <div className="mk-center">
+                  <span className="mk-search" />
+                  <div className="mk-tiles">
+                    {Array.from({ length: 8 }).map((_, i) => <span key={i} className="mk-tile" />)}
                   </div>
                 </div>
-                <div className="pos-cart">
-                  <span className="pos-line" />
-                  <span className="pos-line" />
-                  <span className="pos-line s" />
-                  <span className="pos-total" />
+                <div className="mk-cart">
+                  <span className="mk-line" />
+                  <span className="mk-line" />
+                  <span className="mk-line s" />
+                  <span className="mk-total" />
                 </div>
               </div>
             </div>
