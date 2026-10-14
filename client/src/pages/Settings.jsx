@@ -4,6 +4,7 @@ import db from '../db';
 import { useToast } from '../context/ToastContext';
 import { Button, Card, Field } from '../components/ui';
 import { ACCENTS, applyAccent, savedAccent, DEFAULT_ACCENT } from '../utils/theme';
+import { generateGuidePdf } from '../utils/guidePdf';
 
 export default function Settings() {
   const [form, setForm] = useState({});
@@ -50,11 +51,29 @@ export default function Settings() {
     api.put('/settings', { accentColor: applied }).catch(() => {});
   };
 
+  const downloadGuide = () => {
+    try {
+      generateGuidePdf(form);
+      toast('User guide PDF downloaded', 'success');
+    } catch (e) {
+      toast(e.message || 'Could not create PDF', 'error');
+    }
+  };
+
   return (
     <div>
       <h2 className="mb-16">Settings</h2>
 
-      <Card title="Appearance">
+      <Card title="Help & Support">
+        <div className="muted small mb-16">
+          Poori user guide PDF download karein — isme shuru se lekar billing, inventory,
+          reports, backup aur troubleshooting tak sab step-by-step likha hai. Naye staff
+          ko training dene ke liye perfect.
+        </div>
+        <Button onClick={downloadGuide}>⬇️ Download User Guide (PDF)</Button>
+      </Card>
+
+      <Card title="Appearance" className="mt-16">
         <div className="muted small mb-16">
           Apni brand colour chunein — ye poore software (buttons, sidebar, charts) par turant lag jayegi aur save rahegi.
         </div>

@@ -40,7 +40,7 @@ export default function Operations() {
     <div>
       <h2 className="mb-16">Operations</h2>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }} className="mb-16">
+      <div className="kpi-grid mb-16">
         <StatCard label="Stock transfers" value={summary?.transfers ?? '—'} icon="🔁" />
         <StatCard label="Active branches" value={summary?.branches ?? '—'} icon="🏢" />
         <StatCard label="Low stock items" value={summary?.lowStock ?? '—'} tone="warning" icon="⚠️" />

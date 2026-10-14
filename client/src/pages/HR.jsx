@@ -49,7 +49,7 @@ export default function HR() {
         <h2>HR & Staff</h2>
       </div>
 
-      <div className="grid grid-4 mb-16" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+      <div className="kpi-grid mb-16">
         <StatCard label="Active staff" value={summary?.activeCount ?? '—'} icon="👥" />
         <StatCard label="Monthly payroll" value={summary ? money(summary.monthlyPayroll) : '—'} icon="💼" />
         <StatCard label="Paid this month" value={summary ? money(summary.paidAmount) : '—'} tone="success" icon="✅" />

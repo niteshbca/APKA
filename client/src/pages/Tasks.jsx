@@ -24,7 +24,7 @@ export default function Tasks() {
     <div>
       <h2 className="mb-16">Tasks</h2>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }} className="mb-16">
+      <div className="kpi-grid mb-16">
         <StatCard label="Pending" value={summary?.pending ?? '—'} tone="warning" icon="⏳" />
         <StatCard label="In progress" value={summary?.inProgress ?? '—'} icon="🔄" />
         <StatCard label="Completed" value={summary?.done ?? '—'} tone="success" icon="✅" />

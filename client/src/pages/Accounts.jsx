@@ -23,7 +23,7 @@ export default function Accounts() {
         <input type="month" className="input" style={{ maxWidth: 180 }} value={month} onChange={(e) => setMonth(e.target.value)} />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }} className="mb-16">
+      <div className="kpi-grid mb-16">
         <StatCard label={`Income (${month})`} value={summary ? money(summary.income) : '—'} tone="success" icon="📥" />
         <StatCard label={`Expense (${month})`} value={summary ? money(summary.expense) : '—'} tone="danger" icon="📤" />
         <StatCard label="Net" value={summary ? money(summary.net) : '—'} tone="primary" icon="💰" />

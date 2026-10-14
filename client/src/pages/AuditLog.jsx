@@ -44,7 +44,7 @@ export default function AuditLog() {
         <h2>Edit Log</h2>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }} className="mb-16">
+      <div className="kpi-grid mb-16">
         <StatCard label="Total events" value={summary?.total ?? '—'} icon="📝" />
         <StatCard label="Successful" value={summary?.success ?? '—'} tone="success" icon="✅" />
         <StatCard label="Failed" value={summary?.failure ?? '—'} tone="danger" icon="⛔" />

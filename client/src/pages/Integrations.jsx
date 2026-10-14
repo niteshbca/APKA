@@ -24,7 +24,7 @@ export default function Integrations() {
 
       {error && <p className="muted mb-16">Could not load status: {error}</p>}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }} className="mb-16">
+      <div className="kpi-grid mb-16">
         <StatCard label="API server" value={status?.api?.healthy ? 'Online' : '—'} tone="success" icon="🔌" />
         <StatCard label="Registered devices" value={status?.devices ?? '—'} icon="💻" />
         <StatCard label="Cloud sync" value={status?.cloudSync?.enabled ? 'Enabled' : 'Off'} tone={tone(status?.cloudSync?.enabled)} icon="☁️" />

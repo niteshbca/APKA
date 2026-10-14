@@ -42,14 +42,14 @@ export default function WorkReports() {
         <Spinner />
       ) : (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }} className="mb-16">
+          <div className="kpi-grid mb-16">
             <StatCard label="Tasks open" value={data.tasks.byStatus.pending + data.tasks.byStatus.in_progress} sub={`${data.tasks.byStatus.done} done`} tone="warning" icon="✅" />
             <StatCard label="Overdue tasks" value={data.tasks.overdue} tone="danger" icon="⚠️" />
             <StatCard label="Sales" value={money(data.sales.total)} sub={`${data.sales.orders} orders`} tone="success" icon="💰" />
             <StatCard label="Present days" value={att.present} sub={`${att.absent} absent · ${att.leave} leave`} icon="🧑💼" />
           </div>
 
-          <div className="grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div className="grid-2">
             <Card title="Tasks by assignee">
               {data.tasks.byAssignee.length === 0 ? (
                 <EmptyState icon="✅" title="No tasks" />
